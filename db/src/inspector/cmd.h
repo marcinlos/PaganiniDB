@@ -1,26 +1,39 @@
 #ifndef _CMD_H
 #define _CMD_H
 
-#define MAX_CMD_LEN 20
+#include <string>
+#include <vector>
+#include <map>
+#include <functional>
+using std::string;
+using std::vector;
+using std::map;
 
-typedef void (*handler)(int, char**);
 
-struct command
+typedef std::function<void (vector<string>)> Handler;
+
+struct Command
 {
-    char name[MAX_CMD_LEN];
-    char* desc;
-    handler f;
-    struct command* next;
+    Handler f;
+    string desc;
+    
+    Command() { }
+    
+    Command(Handler f, const string& desc): f(f), desc(desc)
+    {
+    }
 };
 
-/* Dodaje komende o podanej nazwie */
-void register_cmd(const char* cmd, handler f, const char* desc);
 
-/* Zwraca funkcje implementujaca podana komende */
-handler get_handler(const char* cmd);
-
-/* Zwraca glowe listy zarejestrowanych komend */
-struct command* get_commands(void);
+class CommandExecutor
+{
+private:
+    map<string, Command> commands;
+    
+public:
+    void registerCmd(const string& name, Handler f, const string& desc);
+    void execute(const string& command);
+};
 
 #endif /* _CMD_H */
 

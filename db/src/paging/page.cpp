@@ -1,13 +1,18 @@
 #include "config.h"
 #include "paging/page.h"
 
-void pdbFillHeader(pdbPageHeader* header, pdbPageNumber number)
+namespace paganini
 {
-    header->page_number = number;
+
+void pdbFillHeader(pdbPageHeader* header, page_number number)
+{
+    header->number = number;
     header->next = header->prev = NULL_PAGE;
     header->owner = NULL_OBJ;
     header->rows = 0;
     header->free_space = DATA_SIZE;
     header->free_offset = DATA_OFFSET;
-    header->flags = UNUSED_PAGE;
+    setPageType(header->flags, PageType::UNUSED);
+}
+
 }

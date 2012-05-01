@@ -10,11 +10,14 @@
 #   include <paganini/paging/page.h>
 #endif
 
+namespace paganini
+{
+
 // Ilosc stron alokowanych poczatkowo (co najmniej 2 - naglowek + pierwsza UV)
-#define INITIAL_SIZE (2 + 0)
+static const size16 INITIAL_SIZE = 2 + 0;
 
 // Ilosc stron alokowana za kazdym razem, gdy brakuje miejsca
-#define GROWTH_RATE 20
+static const size16 GROWTH_RATE = 20;
 
 
 // Tworzy nowy plik bazy danych - strone naglowka, i pierwsza strone UV.
@@ -24,23 +27,24 @@ int pdbCreateDatabaseFile(const char* path);
 int pdbPageManagerStart(const char* path);
 
 // Konczy dzialanie managera stronnicowania
-int pdbPageManagerStop(void);
+int pdbPageManagerStop();
 
 // Zwraca numer wolnej strony. W razie potrzeby zwieksza rozmiar pliku, i
 // potencjalnie tworzy potrzebne strony UV. Strona jest zaznaczona jako uzywana.
-pdbPageNumber pdbAllocPage(void);
+page_number pdbAllocPage();
 
 // Zwalnia strone o podanym numerze. Strona jest zaznaczana jako wolna, moze
 // zostac ponownie uzyta.
-int pdbDeletePage(pdbPageNumber number);
+int pdbDeletePage(page_number number);
 
 // Wczytuje do podanego bufora strone o zadanym numerze. 
-int pdbReadPage(pdbPageNumber number, pdbPageBuffer buffer);
+int pdbReadPage(page_number number, pdbPageBuffer buffer);
 
 // Zapisuje do strony o podanym numerze dane z bufora. W celu zachowania 
 // spojnosci danych, strona powinna istniec i byc zaznaczona jako uzyta.
-int pdbWritePage(pdbPageNumber number, pdbPageBuffer buffer);
+int pdbWritePage(page_number number, pdbPageBuffer buffer);
 
+}
 
 #endif // __PAGING_PAGE_MANAGER_H__
 

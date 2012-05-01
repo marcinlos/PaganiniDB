@@ -2,12 +2,15 @@
 #include "paging/page_manager.h"
 #include "paging/dbfile_header.h"
 #include "error_msg.h"
-#include <stdio.h>
-#include <time.h>
+#include "operations.h"
+#include <cstdio>
+#include <ctime>
+#include <cstring>
+using namespace paganini;
 
 // Wypisywanie naglowka strony
 
-static char* _str_page_number(char* buffer, pdbPageNumber number)
+static char* _str_page_number(char* buffer, page_number number)
 {
     if (number == NULL_PAGE)
         strcpy(buffer, "NULL_PAGE");
@@ -16,7 +19,7 @@ static char* _str_page_number(char* buffer, pdbPageNumber number)
     return buffer;
 }
 
-static char* _str_object_id(char* buffer, pdbObjectId id)
+static char* _str_object_id(char* buffer, object_id id)
 {
     if (id == NULL_OBJ)
         strcpy(buffer, "NULL_OBJ");
@@ -25,20 +28,20 @@ static char* _str_object_id(char* buffer, pdbObjectId id)
     return buffer;
 }
 
-static char* _str_page_type(pdbPageFlags flags)
+static const char* _str_page_type(page_flags flags)
 {
-    pdbPageType type = PAGE_TYPE(flags);
+    PageType type = getPageType(flags);
     switch (type)
     {
-    case UNUSED_PAGE: return "unused";
-    case HEADER_PAGE: return "header";
-    case DATA_PAGE: return "data";
-    case UV_PAGE: return "usage vector";
+    case PageType::UNUSED: return "unused";
+    case PageType::HEADER: return "header";
+    case PageType::DATA: return "data";
+    case PageType::UV: return "usage vector";
     default: return "INVALID";
     }
 }
 
-static char* _str_flags(char* buffer, pdbPageFlags flags)
+static char* _str_flags(char* buffer, page_flags flags)
 {
     sprintf(buffer, "%s", "-");
     return buffer;
@@ -49,7 +52,7 @@ static void _print_page_header(const pdbPageHeader* header)
     char buffer[64];
     const char* fmt = "%-15s %13s\n";
     
-    _str_page_number(buffer, header->page_number);
+    _str_page_number(buffer, header->number);
     printf(fmt, "Page number", buffer);
     printf(fmt, "type", _str_page_type(header->flags));
     
@@ -70,17 +73,18 @@ static void _print_page_header(const pdbPageHeader* header)
     printf("\n");
 }
 
-void print_page_header(int argc, char** args)
+void print_page_header(const vector<string>& args)
 {
-    if (argc < 1)
+    if (args.size() < 1)
     {
         error_usr("Za malo argumentow, oczekiwano liczby");
         return;
     }
     unsigned int page_number;
-    if (sscanf(args[0], "%u", &page_number) == 0)
+    if (sscanf(args[0].c_str(), "%u", &page_number) == 0)
     {
-        error_usr("Niepoprawny argument: '%s', oczekwano liczby", args[0]);
+        error_usr("Niepoprawny argument: '%s', oczekwano liczby", 
+            args[0].c_str());
         return;
     }
     pdbPageBuffer buffer;
@@ -108,7 +112,7 @@ void _print_db_header(const pdbDatabaseHeader* dbh)
     printf("\n");
 }
 
-void print_db_header(int argc, char** args)
+void print_db_header(const vector<string>& args)
 {
     pdbPageBuffer buffer;
     pdbDatabaseHeader* dbh = (pdbDatabaseHeader*) (buffer + DATA_OFFSET);
@@ -146,20 +150,21 @@ void _print_uv_content(pdbPageBuffer buffer)
     putchar('\n');
 }
 
-void print_uv_content(int argc, char** args)
+void print_uv_content(const vector<string>& args)
 {
-    if (argc < 1)
+    if (args.size() < 1)
     {
         error_usr("Za malo argumentow, oczekiwano liczby");
         return;
     }
     unsigned int page_number;
-    if (sscanf(args[0], "%u", &page_number) == 0)
+    if (sscanf(args[0].c_str(), "%u", &page_number) == 0)
     {
-        error_usr("Niepoprawny argument: '%s', oczekwano liczby", args[0]);
+        error_usr("Niepoprawny argument: '%s', oczekwano liczby", 
+            args[0].c_str());
         return;
     }
-    if (! IS_UV(page_number))
+    if (! isUV(page_number))
     {
         error_usr("To nie jest strona UV");
         return;

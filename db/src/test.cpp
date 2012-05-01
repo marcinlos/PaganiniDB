@@ -1,6 +1,9 @@
 #include "config.h"
 #include "paging/page.h"
-#include <stdio.h>
+#include "paging/page_manager.h"
+#include "error_msg.h"
+#include <cstdio>
+using namespace paganini;
 
 int main()
 {

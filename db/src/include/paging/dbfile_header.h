@@ -14,19 +14,22 @@
 
 #define MAX_NAME_LENGTH 256
 
+namespace paganini
+{
 
-typedef struct _pdbDatabaseHeader
+struct pdbDatabaseHeader
 {
     // Ilosc stron w pliku
-    pdbSize32 page_count;
+    size32 page_count;
     
     // Nazwa bazy danych - ograniczonej dlugosci dla wygody
     char db_name[MAX_NAME_LENGTH];
     
     // Czas utworzenia bazy danych
-    pdbTimestamp creation_time;
+    timestamp creation_time;
+};
+
 }
-pdbDatabaseHeader;
 
 #endif // __PAGING_DBFILE_HEADER_H__
 

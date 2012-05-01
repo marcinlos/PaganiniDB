@@ -1,8 +1,8 @@
 #include "config.h"
-#include <stddef.h>
+#include <cstddef>
 
 // Rozmiar tablicy
-#define ERROR_COUNT 256
+static const int ERROR_COUNT = 256;
 
 static int pdb_errno;
 
@@ -32,7 +32,7 @@ const char* pdbErrorMsg(int error)
 {
     if (error > 0 && error < ERROR_COUNT)
         return messages[error];
-    return NULL;
+    return nullptr;
 }
 
 

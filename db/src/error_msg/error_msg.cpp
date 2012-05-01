@@ -1,10 +1,10 @@
 #include "config.h"
 #include "pdb_error.h"
-#include <stdio.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
+#include <cstdio>
+#include <cerrno>
+#include <cstdlib>
+#include <cstdarg>
+#include <cstring>
 
 const static int _MAX_MSG_LEN = 1024;
 
@@ -17,7 +17,7 @@ static void _error_core(int error, const char* text, va_list args)
         
     strcat(buffer, "\n");
     fputs(buffer, stderr);
-    fflush(NULL);
+    fflush(nullptr);
 }
 
 void fatal_sys(const char* text, ...)
@@ -64,7 +64,7 @@ static void _pdb_error_core(int error, const char* text, va_list args)
         
     strcat(buffer, "\n");
     fputs(buffer, stderr);
-    fflush(NULL);
+    fflush(nullptr);
 }
 
 void fatal_pdb(const char* text, ...)

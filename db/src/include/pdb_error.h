@@ -5,7 +5,7 @@
 const char* pdbErrorMsg(int errno);
 
 // Funkcja pobierajaca kod bledu
-int pdbErrno(void);
+int pdbErrno();
 
 // Funkcja ustawiajaca kod bledu - do uzytku wewnetrznego
 int _pdbSetErrno(int errno);
