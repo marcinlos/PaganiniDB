@@ -1,0 +1,13 @@
+#!/bin/bash
+
+TARGET_DIR=/home/los/sysopy/projekt_db/dblib
+
+aclocal
+autoheader
+libtoolize
+automake -a
+autoconf
+./configure --prefix=${TARGET_DIR} --exec-prefix=${TARGET_DIR}
+make
+make install
+

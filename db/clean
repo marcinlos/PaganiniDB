@@ -1,0 +1,12 @@
+#!/bin/bash
+
+find -regex ".*~" -exec rm {} \;
+find -regex ".*\.in" -exec rm {} \;
+find -regex ".*\.l?[ao]" -exec rm {} \;
+find -name "Makefile" -exec rm {} \;
+find -regex ".*/config\..*" -exec rm {} \;
+find -regex ".*/\..*" -exec rm -rf {} \; 2>/dev/null
+FILELIST="autoscan.log autom4te.cache bin aclocal.m4 configure \
+    COPYING depcomp INSTALL install-sh libtool ltmain.sh missing stamp-h1"
+rm -rf ${FILELIST}
+
