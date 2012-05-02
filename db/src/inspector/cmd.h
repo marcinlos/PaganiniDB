@@ -10,7 +10,7 @@ using std::vector;
 using std::map;
 
 
-typedef std::function<void (vector<string>)> Handler;
+typedef std::function<void (const vector<string>&)> Handler;
 
 struct Command
 {
@@ -32,7 +32,7 @@ private:
     
 public:
     void registerCmd(const string& name, Handler f, const string& desc);
-    void execute(const string& command);
+    void operator ()(const string& command);
 };
 
 #endif /* _CMD_H */

@@ -13,12 +13,16 @@ void CommandExecutor::registerCmd(const string& name, Handler f,
     commands[name] = cmd;
 }
 
-void CommandExecutor::execute(const string& command)
+void CommandExecutor::operator ()(const string& command)
 {
     vector<string> args;
     static const char delims[] = "\t ";
     vector<char> buffer(command.begin(), command.end());
+    
     const char* str = strtok(&buffer[0], delims);
+    if (str == nullptr)
+        return;
+        
     auto i = commands.find(str);
     str = strtok(nullptr, delims);
     

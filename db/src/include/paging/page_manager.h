@@ -5,9 +5,9 @@
 #define __PAGING_PAGE_MANAGER_H__
 
 #ifdef _PAGANINI
-#   include "paging/page.h"
+#   include "paging/Page.h"
 #else 
-#   include <paganini/paging/page.h>
+#   include <paganini/paging/Page.h>
 #endif
 
 namespace paganini
@@ -38,11 +38,11 @@ page_number pdbAllocPage();
 int pdbDeletePage(page_number number);
 
 // Wczytuje do podanego bufora strone o zadanym numerze. 
-int pdbReadPage(page_number number, pdbPageBuffer buffer);
+int pdbReadPage(page_number number, Page* buffer);
 
 // Zapisuje do strony o podanym numerze dane z bufora. W celu zachowania 
 // spojnosci danych, strona powinna istniec i byc zaznaczona jako uzyta.
-int pdbWritePage(page_number number, pdbPageBuffer buffer);
+int pdbWritePage(page_number number, const Page* buffer);
 
 }
 

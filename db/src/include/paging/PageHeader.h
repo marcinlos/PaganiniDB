@@ -14,7 +14,16 @@
 namespace paganini
 {
 
-struct pdbPageHeader
+// Rodzaje stron
+enum class PageType// : page_flags
+{
+    UNUSED = 15,    // Nieuzywana strona (domyslnie)
+    HEADER = 1,     // pierwsza strona bazy danych
+    DATA = 2,       // strona z danymi
+    UV = 3          // Usage Vector
+};
+
+struct PageHeader
 {
     // Numer strony w pliku
     page_number number;
@@ -38,12 +47,16 @@ struct pdbPageHeader
     
     // Flagi strony (BITS_PER_PAGE_TYPE najmlodszych bitow to typ strony)
     page_flags flags;
+    
+    void fill(page_number number, PageType type = PageType::UNUSED);
+    
+    PageHeader(page_number number, PageType type = PageType::UNUSED);
 }; 
+
+static const int HEADER_SIZE = sizeof(PageHeader);
 
 }
 
-
-#define HEADER_SIZE (sizeof(pdbPageHeader))
 
 #endif // __PAGING_PAGE_HEADER_H__
 

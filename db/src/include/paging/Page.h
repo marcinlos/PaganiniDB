@@ -5,24 +5,15 @@
 #define __PAGING_PAGE_H__
 
 #ifdef _PAGANINI
-#   include "paging/page_header.h"
+#   include "paging/PageHeader.h"
 #   include "paging/types.h"
 #else 
-#   include <paganini/paging/page_header.h>
+#   include <paganini/paging/PageHeader.h>
 #   include <paganini/paging/types.h>
 #endif
 
 namespace paganini
 {
-
-// Rodzaje stron
-enum class PageType// : page_flags
-{
-    UNUSED = 15,    // Nieuzywana strona (domyslnie)
-    HEADER = 1,     // pierwsza strona bazy danych
-    DATA = 2,       // strona z danymi
-    UV = 3          // Usage Vector
-};
 
 
 // Specjalne strony
@@ -65,7 +56,7 @@ static const row_offset DATA_OFFSET = HEADER_SIZE;
 static const size16 DATA_SIZE = PAGE_SIZE - DATA_OFFSET;
 
 // Ilosc stron obslugiwanych przez jedna strone UV
-static const size32 PAGES_PER_UV = 8000;
+static const size32 PAGES_PER_UV = 8;
 
 // Sprawdza, czy strona o podanym numerze to strona UV
 inline bool isUV(page_number page)
@@ -75,11 +66,19 @@ inline bool isUV(page_number page)
 
 
 // Typedefy do surowych danych
-typedef unsigned char* pdbData;
+typedef uint8_t* page_data;
+typedef page_data pdbData;
 typedef unsigned char pdbPageBuffer[PAGE_SIZE]; 
 
-// Wypelnia naglowek domyslnymi danymi
-void pdbFillHeader(pdbPageHeader* header, page_number number);
+
+struct Page
+{
+    PageHeader header;
+    uint8_t data[DATA_SIZE];
+    
+    Page(page_number number = NULL_PAGE, PageType type = PageType::UNUSED);
+};
+
 
 }
 

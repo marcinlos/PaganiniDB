@@ -1,5 +1,5 @@
 #include "config.h"
-#include "paging/page.h"
+#include "paging/Page.h"
 #include "paging/page_manager.h"
 #include "paging/dbfile_header.h"
 #include "pdb_error.h"
@@ -7,6 +7,8 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <string>
+using std::string;
 
 namespace paganini
 {
@@ -30,20 +32,15 @@ static int _pdbMoveToPage(page_number page)
 // Wypelnia naglowek pliku bazy danych (ilosc stron i czas)
 static int _pdbCreateHeader()
 {
-    pdbPageBuffer buffer;
-    
-    // Wypelniamy naglowek
-    pdbPageHeader* header = (pdbPageHeader*) buffer;
-    pdbFillHeader(header, 0);
-    setPageType(header->flags, PageType::HEADER);
+    Page page(0, PageType::HEADER);
 
     // Zapisujemy metadane 
-    pdbDatabaseHeader* data = (pdbDatabaseHeader*) (buffer + DATA_OFFSET);
+    pdbDatabaseHeader* data = (pdbDatabaseHeader*) page.data;
     data->page_count = INITIAL_SIZE;
     data->creation_time = time(nullptr);
     strcpy(data->db_name, "Default DB Name");
     
-    if (pdbWritePage(0, buffer) < 0)
+    if (pdbWritePage(0, &page) < 0)
         return -1;
     return 0;
 }
@@ -60,25 +57,23 @@ static int _pdbCreateUVPage(page_number previous_uv)
         new_page = previous_uv + PAGES_PER_UV + 1;
     
     // Uaktualniamy nexta w poprzedniej UV-stronie, jesli istnieje
-    pdbPageBuffer buffer;
-    pdbPageHeader* header = (pdbPageHeader*) buffer;
+    Page page;
     
     if (previous_uv != NULL_PAGE)
     {
-        pdbReadPage(previous_uv, buffer);
-        header->next = new_page;
-        if (pdbWritePage(previous_uv, buffer) < 0)
+        pdbReadPage(previous_uv, &page);
+        page.header.next = new_page;
+        if (pdbWritePage(previous_uv, &page) < 0)
             return NULL_PAGE;
     }
     
     // Wypelniamy naglowek strony, typ = UV_PAGE
-    pdbFillHeader(header, new_page);
-    header->prev = previous_uv;
-    setPageType(header->flags, PageType::UV);
-    pdbData data = buffer + DATA_OFFSET;
-    memset(data, 0, DATA_SIZE);
+    page.header.fill(new_page, PageType::UV);
+    page.header.prev = previous_uv;
+
+    memset(page.data, 0, DATA_SIZE);
     
-    if (pdbWritePage(new_page, buffer) < 0)
+    if (pdbWritePage(new_page, &page) < 0)
         return NULL_PAGE;
     return new_page;
 }
@@ -157,13 +152,12 @@ static void _pdbUnsetBit(pdbData data, int bit)
 
 // Wczytuje do bufora strone UV zawierajaca informacje o stronie podanej jako 
 // pierwszy argument
-static page_number _pdbReadUVOfPage(page_number number, 
-    pdbPageBuffer buffer)
+static page_number _pdbReadUVOfPage(page_number number, Page* page)
 {
     page_number uv = _pdbFindUV(number);
     if (uv != NULL_PAGE)
     {
-        if (pdbReadPage(uv, buffer) < 0)
+        if (pdbReadPage(uv, page) < 0)
             return NULL_PAGE;
     }       
     return uv;
@@ -175,16 +169,16 @@ static page_number _pdbReadUVOfPage(page_number number,
 static int _pdbMarkAsUsed(page_number number)
 {
     // Wczytujemy odpowiednia strone UV
-    pdbPageBuffer buffer;
+    Page page;
     page_number uv;
-    if ((uv = _pdbReadUVOfPage(number, buffer)) == NULL_PAGE)
+    if ((uv = _pdbReadUVOfPage(number, &page)) == NULL_PAGE)
         return -1;
         
     // Numer bitu to pozycja wzgledem strony UV
     int bit = number - (uv + 1);
-    _pdbSetBit(buffer + DATA_OFFSET, bit);
+    _pdbSetBit(page.data, bit);
     
-    if (pdbWritePage(uv, buffer) < 0)
+    if (pdbWritePage(uv, &page) < 0)
         return -1;
     return 0;
 }
@@ -194,15 +188,15 @@ static int _pdbMarkAsUsed(page_number number)
 // Implementacja analogiczna do _pdbMarkAsUsed().
 static int _pdbMarkAsFree(page_number number)
 {
-    pdbPageBuffer buffer;
+    Page page;
     page_number uv;
-    if ((uv = _pdbReadUVOfPage(number, buffer)) == NULL_PAGE)
+    if ((uv = _pdbReadUVOfPage(number, &page)) == NULL_PAGE)
         return -1;
  
     int bit = number - (uv + 1);
-    _pdbUnsetBit(buffer + DATA_OFFSET, bit);
+    _pdbUnsetBit(page.data, bit);
  
-    if (pdbWritePage(uv, buffer) < 0)
+    if (pdbWritePage(uv, &page) < 0)
         return -1;
     return 0;
 }
@@ -247,15 +241,13 @@ static int _pdbFindNonzeroBit(unsigned char byte)
 // W sekcji danych strony przechowywanej w podanym buforze szuka pierwszego
 // zerowego bitu (nieuzywany blok). Zwraca jego pozycje, badz -1 gdy takowego 
 // nie ma.
-static int _pdbScanForFree(pdbPageBuffer uv)
-{
-    pdbData d = uv + DATA_OFFSET;
+static int _pdbScanForFree(const Page* uv)
+{;
     // Po bajtach... mozna by optymalniej, ale... oj tam
-    int i;
-    for (i = 0; i < PAGES_PER_UV / 8; ++ i)
+    for (int i = 0; i < PAGES_PER_UV / 8; ++ i)
     {
         // Napisalem funkcje do znajdowania NIEzerowego bitu...
-        unsigned char b = ~d[i];
+        unsigned char b = ~uv->data[i];
         if (b != 0)  
         {
             return i * 8 + _pdbFindNonzeroBit(b);
@@ -270,11 +262,11 @@ static int _pdbGrowFile(size32 page_count)
 {
     // Wczytujemy z naglowka bazy danych informacje o ilosci wszystkich stron.
     // Moze daloby sie tego uniknac?
-    pdbPageBuffer buffer;
-    if (pdbReadPage(HEADER_PAGE_NUMBER, buffer) < 0)
+    Page page;
+    if (pdbReadPage(HEADER_PAGE_NUMBER, &page) < 0)
         return -1;
         
-    pdbDatabaseHeader* header = (pdbDatabaseHeader*) (buffer + DATA_OFFSET);
+    pdbDatabaseHeader* header = (pdbDatabaseHeader*) page.data;
     int count = header->page_count;
     int diff = (count - 2) % (PAGES_PER_UV + 1);
     // Pozycja ostatniej strony UV przyda sie do tworzenia kolejnych stron UV
@@ -294,12 +286,11 @@ static int _pdbGrowFile(size32 page_count)
     if (_pdbMoveToPage(header->page_count) < 0)
         return -1;
     
-    if (pdbWritePage(HEADER_PAGE_NUMBER, buffer) < 0)
+    if (pdbWritePage(HEADER_PAGE_NUMBER, &page) < 0)
         return -1;
     
     // Tworzymy w razie potrzeby nowe UV-strony
-    int i;
-    for (i = 0; i < new_uv_count; ++ i)
+    for (int i = 0; i < new_uv_count; ++ i)
     {
         if ((last_uv = _pdbCreateUVPage(last_uv)) == NULL_PAGE)
             return -1;
@@ -313,27 +304,26 @@ static int _pdbGrowFile(size32 page_count)
 static page_number _pdbFindFree()
 {
     // Pobieramy ilosc stron
-    pdbPageBuffer buffer;
-    if (pdbReadPage(HEADER_PAGE_NUMBER, buffer) < 0)
+    Page page;
+    if (pdbReadPage(HEADER_PAGE_NUMBER, &page) < 0)
         return -1;
-    pdbDatabaseHeader* db_header = (pdbDatabaseHeader*) (buffer + DATA_OFFSET);
+    pdbDatabaseHeader* db_header = (pdbDatabaseHeader*) page.data;
     size32 count = db_header->page_count;
     
-    page_number page = FIRST_UV_PAGE_NUMBER;
-    pdbPageHeader* header = (pdbPageHeader*) buffer;
-    page_number prev = page;
+    page_number uv = FIRST_UV_PAGE_NUMBER;
+    page_number prev = uv;
     
     int partial = 0;
     
     // Przechodzimy po liscie stron UV, szukajac wolnej strony
-    while (page != NULL_PAGE)
+    while (uv != NULL_PAGE)
     {
-        if (pdbReadPage(page, buffer) < 0)
+        if (pdbReadPage(uv, &page) < 0)
             return -1;
-        int num = _pdbScanForFree(buffer);
+        int num = _pdbScanForFree(&page);
         if (num != -1)
         {
-            page_number free = header->number + num + 1;
+            page_number free = page.header.number + num + 1;
 
             // Sprawdzenie dla niepelnych stron UV
             if (free < count)
@@ -344,8 +334,8 @@ static page_number _pdbFindFree()
                 break;
             }
         }
-        prev = page;
-        page = header->next;
+        prev = uv;
+        uv = page.header.next;
     }
     // Nie bylo wolnego, trzeba zaalokowac nowe strony
     if (_pdbGrowFile(GROWTH_RATE) < 0)
@@ -360,9 +350,9 @@ static page_number _pdbFindFree()
     // za pierwsza zaalokowana strona UV
     else
     {
-        if (pdbReadPage(prev, buffer) < 0)
+        if (pdbReadPage(prev, &page) < 0)
             return NULL_PAGE;
-        return header->next + 1;
+        return page.header.next + 1;
     }
 }
 
@@ -375,11 +365,9 @@ page_number pdbAllocPage()
 
     // Wypelniamy obowiazki administracyjne
     _pdbMarkAsUsed(free);
-    pdbPageBuffer buffer;
-    pdbPageHeader* ph = (pdbPageHeader*) buffer;
-    pdbFillHeader(ph, free);
+    Page page(free);
  
-    if (pdbWritePage(free, buffer) < 0)
+    if (pdbWritePage(free, &page) < 0)
         return NULL_PAGE;
     return free;
 }
@@ -391,7 +379,7 @@ int pdbDeletePage(page_number number)
 }
 
 
-int pdbReadPage(page_number number, pdbPageBuffer buffer)
+int pdbReadPage(page_number number, Page* buffer)
 {
     _pdbMoveToPage(number);
     if (read(fd, buffer, PAGE_SIZE) < PAGE_SIZE)
@@ -403,7 +391,7 @@ int pdbReadPage(page_number number, pdbPageBuffer buffer)
 }
 
 
-int pdbWritePage(page_number number, pdbPageBuffer buffer)
+int pdbWritePage(page_number number, const Page* buffer)
 {
     _pdbMoveToPage(number);
     if (write(fd, buffer, PAGE_SIZE) < PAGE_SIZE)
@@ -413,6 +401,8 @@ int pdbWritePage(page_number number, pdbPageBuffer buffer)
     }
     return 0;
 }
+
+
 
 }
 

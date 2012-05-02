@@ -12,13 +12,13 @@
 #   include <paganini/paging/types.h>
 #endif
 
-#define MAX_NAME_LENGTH 256
-
 namespace paganini
 {
 
 struct pdbDatabaseHeader
 {
+    static const int MAX_NAME_LENGTH = 256;
+    
     // Ilosc stron w pliku
     size32 page_count;
     

@@ -47,7 +47,7 @@ static char* _str_flags(char* buffer, page_flags flags)
     return buffer;
 }
 
-static void _print_page_header(const pdbPageHeader* header)
+static void _print_page_header(const PageHeader* header)
 {
     char buffer[64];
     const char* fmt = "%-15s %13s\n";
@@ -87,14 +87,13 @@ void print_page_header(const vector<string>& args)
             args[0].c_str());
         return;
     }
-    pdbPageBuffer buffer;
-    pdbPageHeader* header = (pdbPageHeader*) buffer;
-    if (pdbReadPage(page_number, buffer) < 0)
+    Page page;
+    if (pdbReadPage(page_number, &page) < 0)
     {
         error_pdb("Nie udalo sie odczytac strony %d", page_number);
         return;
     }
-    _print_page_header(header);    
+    _print_page_header(&page.header);    
 }
 
 // Wypisywanie naglowka bazy danych
@@ -114,9 +113,9 @@ void _print_db_header(const pdbDatabaseHeader* dbh)
 
 void print_db_header(const vector<string>& args)
 {
-    pdbPageBuffer buffer;
-    pdbDatabaseHeader* dbh = (pdbDatabaseHeader*) (buffer + DATA_OFFSET);
-    if (pdbReadPage(HEADER_PAGE_NUMBER, buffer) < 0)
+    Page page;
+    pdbDatabaseHeader* dbh = (pdbDatabaseHeader*) page.data;
+    if (pdbReadPage(HEADER_PAGE_NUMBER, &page) < 0)
     {
         error_pdb("Nie udalo sie odczytac naglowka pliku");
         return;
@@ -136,15 +135,13 @@ void _print_byte(unsigned char b)
     }
 }
 
-void _print_uv_content(pdbPageBuffer buffer)
+void _print_uv_content(const Page* page)
 {
-    pdbData d = buffer + DATA_OFFSET;
-    int i;
-    for (i = 0; i < PAGES_PER_UV / 8; ++ i)
+    for (int i = 0; i < PAGES_PER_UV / 8; ++ i)
     {
         if (i % 8 == 0)
             putchar('\n');
-        _print_byte(d[i]);
+        _print_byte(page->data[i]);
         putchar(' ');
     }
     putchar('\n');
@@ -169,13 +166,13 @@ void print_uv_content(const vector<string>& args)
         error_usr("To nie jest strona UV");
         return;
     }
-    pdbPageBuffer buffer;
-    if (pdbReadPage(page_number, buffer) < 0)
+    Page page;
+    if (pdbReadPage(page_number, &page) < 0)
     {
         error_pdb("Nie udalo sie odczytac strony %d", page_number);
         return;
     }
-    _print_uv_content(buffer);
+    _print_uv_content(&page);
 }
 
 

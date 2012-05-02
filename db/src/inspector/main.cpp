@@ -8,23 +8,19 @@ using namespace paganini;
 
 CommandExecutor executor;
 
-static void process_line(const char* line)
-{
-    executor.execute(line);
-}
 
-static void input_loop()
+void input_loop()
 {
     std::cout << "> ";
     string line;
     while (std::getline(std::cin, line))
     {
-        executor.execute(line);
+        executor(line);
         std::cout << "> ";
     }
 }
 
-static void prepare()
+void prepare()
 {
     executor.registerCmd("ph", print_page_header, "Wypisuje naglowek strony");
     executor.registerCmd("dbh", print_db_header, "Wypisuje naglowek pliku");

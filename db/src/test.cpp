@@ -1,12 +1,14 @@
 #include "config.h"
-#include "paging/page.h"
+#include "paging/Page.h"
 #include "paging/page_manager.h"
 #include "error_msg.h"
 #include <cstdio>
 using namespace paganini;
 
+
 int main()
 {
+    printf("Size: %d\n", sizeof(Page));
     if (pdbCreateDatabaseFile("dupa") < 0)
         fatal_pdb("WTF??");
     pdbPageManagerStart("dupa");

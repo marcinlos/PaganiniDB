@@ -1,12 +1,13 @@
 AM_CPPFLAGS = -iquote ../include
 
 noinst_LTLIBRARIES = libpaging.la
-libpaging_la_SOURCES = page.cpp \
+libpaging_la_SOURCES = PageHeader.cpp \
+                       Page.cpp \
                        page_manager.cpp
 
 libpaging_la_includedir = ${includedir}/paganini/paging
-libpaging_la_include_HEADERS = ../include/paging/page.h \
-    ../include/paging/page_header.h \
+libpaging_la_include_HEADERS = ../include/paging/Page.h \
+    ../include/paging/PageHeader.h \
     ../include/paging/page_manager.h \
     ../include/paging/types.h \
     ../include/paging/dbfile_header.h
