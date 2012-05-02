@@ -13,11 +13,31 @@
 namespace paganini
 {
 
-// Ilosc stron alokowanych poczatkowo (co najmniej 2 - naglowek + pierwsza UV)
-static const size16 INITIAL_SIZE = 2 + 0;
+// Ilosc stron poczatkowych, nie uzywanych jako UV ani na dane. Zapewne
+// tylko naglowek - 1
+static const size32 METADATA_PAGES = 1;
+
+// Ilosc stron alokowanych poczatkowo poza danymi pliku (METADATA_PAGES)
+// (co najmniej 1 - pierwsza strona UV)
+static const size32 INITIAL_PAGES = 1;
+
+// Sumaryczna ilosc stron alokowana na poczatku (metadane + ilosc poczatkowa
+// stron dodatkowych)
+static const size32 FIRST_ALLOC = METADATA_PAGES + INITIAL_PAGES;
 
 // Ilosc stron alokowana za kazdym razem, gdy brakuje miejsca
-static const size16 GROWTH_RATE = 20;
+static const size32 GROWTH_RATE = 20;
+
+
+// Specjalne strony
+static const page_number HEADER_PAGE_NUMBER = 0;
+static const page_number FIRST_UV_PAGE_NUMBER = 1;
+
+// Sprawdza, czy strona o podanym numerze to strona UV
+inline bool isUV(page_number page)
+{
+    return (page - METADATA_PAGES) % (PAGES_PER_UV + 1) == 0;
+}
 
 
 // Tworzy nowy plik bazy danych - strone naglowka, i pierwsza strone UV.

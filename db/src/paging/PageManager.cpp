@@ -1,14 +1,17 @@
 #include "config.h"
 #include "paging/Page.h"
-#include "paging/page_manager.h"
-#include "paging/dbfile_header.h"
-#include "pdb_error.h"
+#include "paging/PageManager.h"
+#include "paging/DatabaseHeader.h"
+
+#include "util/bits.h"
 #include <fcntl.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
 #include <string>
+#include "pdb_error.h"
 using std::string;
+
 
 namespace paganini
 {
@@ -22,7 +25,7 @@ static int _pdbMoveToPage(page_number page)
 {
     if (lseek(fd, page * PAGE_SIZE, SEEK_SET) < 0)
     {
-        _pdbSetErrno(PDBE_SEEK);
+        _pdbSetErrno(Error::SEEK);
         return -1;
     }
     return 0;
@@ -35,11 +38,9 @@ static int _pdbCreateHeader()
     Page page(0, PageType::HEADER);
 
     // Zapisujemy metadane 
-    pdbDatabaseHeader* data = (pdbDatabaseHeader*) page.data;
-    data->page_count = INITIAL_SIZE;
-    data->creation_time = time(nullptr);
-    strcpy(data->db_name, "Default DB Name");
-    
+    DatabaseHeader* data = new (page.data) DatabaseHeader("Default DB Name",
+        FIRST_ALLOC);
+        
     if (pdbWritePage(0, &page) < 0)
         return -1;
     return 0;
@@ -71,7 +72,7 @@ static int _pdbCreateUVPage(page_number previous_uv)
     page.header.fill(new_page, PageType::UV);
     page.header.prev = previous_uv;
 
-    memset(page.data, 0, DATA_SIZE);
+    page.clearData();
     
     if (pdbWritePage(new_page, &page) < 0)
         return NULL_PAGE;
@@ -84,11 +85,11 @@ int pdbCreateDatabaseFile(const char* path)
     // Tworzymy nowy plik dostepny dla uzytkownika
     if ((fd = open(path, O_CREAT | O_RDWR, S_IWUSR | S_IRUSR)) < 0)
     {
-        _pdbSetErrno(PDBE_FILECREATE);
+        _pdbSetErrno(Error::FILECREATE);
         return -1;
     }
     // Alokujemy miejsce na pierwsze bloki
-    _pdbMoveToPage(INITIAL_SIZE);
+    _pdbMoveToPage(FIRST_ALLOC);
     
     // Tworzymy naglowek i pierwsza strone UV
     _pdbCreateHeader();
@@ -104,7 +105,7 @@ int pdbPageManagerStart(const char* path)
 {
     if ((fd = open(path, O_RDWR)) < 0)
     {
-        _pdbSetErrno(PDBE_FILEOPEN);
+        _pdbSetErrno(Error::FILEOPEN);
         return -1;
     }
     return 0;
@@ -134,20 +135,7 @@ static page_number _pdbFindUV(page_number number)
 }
 
 
-// Ustawia w data bit o podanym numerze
-static void _pdbSetBit(pdbData data, int bit)
-{
-    data += bit / 8;
-    *data |= (1 << (bit % 8));
-}
 
-
-// Zeruje w data bit o podanym numerze
-static void _pdbUnsetBit(pdbData data, int bit)
-{
-    data += bit / 8;
-    *data &= ~(1 << (bit % 8));
-}
 
 
 // Wczytuje do bufora strone UV zawierajaca informacje o stronie podanej jako 
@@ -176,7 +164,7 @@ static int _pdbMarkAsUsed(page_number number)
         
     // Numer bitu to pozycja wzgledem strony UV
     int bit = number - (uv + 1);
-    _pdbSetBit(page.data, bit);
+    util::set_bit(page.data, bit);
     
     if (pdbWritePage(uv, &page) < 0)
         return -1;
@@ -194,7 +182,7 @@ static int _pdbMarkAsFree(page_number number)
         return -1;
  
     int bit = number - (uv + 1);
-    _pdbUnsetBit(page.data, bit);
+    util::unset_bit(page.data, bit);
  
     if (pdbWritePage(uv, &page) < 0)
         return -1;
@@ -202,40 +190,7 @@ static int _pdbMarkAsFree(page_number number)
 }
 
 
-// Znajduje niezerowy bit w podanym bajcie. Jesli go nie ma, zwraca -1.
-// Perfidne wyszukiwanie binarne... 
-// Naprawde powinienem wywalic te funkcje do bitow do jakiejs biblioteki
-// pomocniczej.
-static int _pdbFindNonzeroBit(unsigned char byte)
-{
-    if (byte & 0x0f)
-    {
-        if (byte & 0x03)
-        {
-            if (byte & 0x01) return 0;
-            else return 1;
-        }
-        else // byte & 0x0c
-        {
-            if (byte & 0x04) return 2;
-            else return 3;
-        }
-    }
-    else if (byte & 0xf0)
-    {
-        if (byte & 0x30)
-        {
-            if (byte & 0x10) return 4;
-            else return 5;
-        }
-        else // byte & 0xc0
-        {
-            if (byte & 0x40) return 6;
-            else return 7;
-        }
-    }
-    else return -1;
-}
+
 
 
 // W sekcji danych strony przechowywanej w podanym buforze szuka pierwszego
@@ -250,7 +205,7 @@ static int _pdbScanForFree(const Page* uv)
         unsigned char b = ~uv->data[i];
         if (b != 0)  
         {
-            return i * 8 + _pdbFindNonzeroBit(b);
+            return i * 8 + util::first_nonzero_bit(b);
         }
     }
     return -1;
@@ -266,7 +221,7 @@ static int _pdbGrowFile(size32 page_count)
     if (pdbReadPage(HEADER_PAGE_NUMBER, &page) < 0)
         return -1;
         
-    pdbDatabaseHeader* header = (pdbDatabaseHeader*) page.data;
+    DatabaseHeader* header = (DatabaseHeader*) page.data;
     int count = header->page_count;
     int diff = (count - 2) % (PAGES_PER_UV + 1);
     // Pozycja ostatniej strony UV przyda sie do tworzenia kolejnych stron UV
@@ -307,7 +262,7 @@ static page_number _pdbFindFree()
     Page page;
     if (pdbReadPage(HEADER_PAGE_NUMBER, &page) < 0)
         return -1;
-    pdbDatabaseHeader* db_header = (pdbDatabaseHeader*) page.data;
+    DatabaseHeader* db_header = (DatabaseHeader*) page.data;
     size32 count = db_header->page_count;
     
     page_number uv = FIRST_UV_PAGE_NUMBER;
@@ -384,7 +339,7 @@ int pdbReadPage(page_number number, Page* buffer)
     _pdbMoveToPage(number);
     if (read(fd, buffer, PAGE_SIZE) < PAGE_SIZE)
     {
-        _pdbSetErrno(PDBE_READ);
+        _pdbSetErrno(Error::READ);
         return -1;
     }
     return 0;
@@ -396,7 +351,7 @@ int pdbWritePage(page_number number, const Page* buffer)
     _pdbMoveToPage(number);
     if (write(fd, buffer, PAGE_SIZE) < PAGE_SIZE)
     {
-        _pdbSetErrno(PDBE_WRITE);
+        _pdbSetErrno(Error::WRITE);
         return -1;
     }
     return 0;

@@ -11,11 +11,13 @@
 #else 
 #   include <paganini/paging/types.h>
 #endif
+#include <string>
+using std::string;
 
 namespace paganini
 {
 
-struct pdbDatabaseHeader
+struct DatabaseHeader
 {
     static const int MAX_NAME_LENGTH = 256;
     
@@ -27,6 +29,9 @@ struct pdbDatabaseHeader
     
     // Czas utworzenia bazy danych
     timestamp creation_time;
+    
+    // Wypelnia naglowek odpowiednimi wartosciami
+    DatabaseHeader(const string& name, size32 page_count = 1);
 };
 
 }

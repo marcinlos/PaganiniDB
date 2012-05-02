@@ -1,6 +1,6 @@
 #include "config.h"
-#include "paging/page_manager.h"
-#include "paging/dbfile_header.h"
+#include "paging/PageManager.h"
+#include "paging/DatabaseHeader.h"
 #include "error_msg.h"
 #include "operations.h"
 #include <cstdio>
@@ -98,7 +98,7 @@ void print_page_header(const vector<string>& args)
 
 // Wypisywanie naglowka bazy danych
 
-void _print_db_header(const pdbDatabaseHeader* dbh)
+void _print_db_header(const DatabaseHeader* dbh)
 {
     printf("%-15s %25s\n", "db name", dbh->db_name);
     printf("%-15s %25u\n", "page count", dbh->page_count);
@@ -114,7 +114,7 @@ void _print_db_header(const pdbDatabaseHeader* dbh)
 void print_db_header(const vector<string>& args)
 {
     Page page;
-    pdbDatabaseHeader* dbh = (pdbDatabaseHeader*) page.data;
+    DatabaseHeader* dbh = (DatabaseHeader*) page.data;
     if (pdbReadPage(HEADER_PAGE_NUMBER, &page) < 0)
     {
         error_pdb("Nie udalo sie odczytac naglowka pliku");

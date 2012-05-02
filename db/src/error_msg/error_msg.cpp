@@ -6,6 +6,10 @@
 #include <cstdarg>
 #include <cstring>
 
+using paganini::Error;
+using paganini::pdbErrno;
+using paganini::pdbErrorMsg;
+
 const static int _MAX_MSG_LEN = 1024;
 
 static void _error_core(int error, const char* text, va_list args)
@@ -55,11 +59,11 @@ void error_usr(const char* text, ...)
 }
 
 
-static void _pdb_error_core(int error, const char* text, va_list args)
+static void _pdb_error_core(Error error, const char* text, va_list args)
 {
     char buffer[_MAX_MSG_LEN];
     vsprintf(buffer, text, args);
-    if (error != 0)
+    if (error != Error::NONE)
         sprintf(buffer + strlen(buffer), "\nPowod: %s", pdbErrorMsg(error));
         
     strcat(buffer, "\n");

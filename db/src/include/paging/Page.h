@@ -15,11 +15,6 @@
 namespace paganini
 {
 
-
-// Specjalne strony
-static const page_number HEADER_PAGE_NUMBER = 0;
-static const page_number FIRST_UV_PAGE_NUMBER = 1;
-
 // Flagi
 
 // Ilosc bitow na typ strony
@@ -58,17 +53,10 @@ static const size16 DATA_SIZE = PAGE_SIZE - DATA_OFFSET;
 // Ilosc stron obslugiwanych przez jedna strone UV
 static const size32 PAGES_PER_UV = 8;
 
-// Sprawdza, czy strona o podanym numerze to strona UV
-inline bool isUV(page_number page)
-{
-    return (page - 1) % (PAGES_PER_UV + 1) == 0;
-}
 
 
 // Typedefy do surowych danych
 typedef uint8_t* page_data;
-typedef page_data pdbData;
-typedef unsigned char pdbPageBuffer[PAGE_SIZE]; 
 
 
 struct Page
@@ -76,7 +64,11 @@ struct Page
     PageHeader header;
     uint8_t data[DATA_SIZE];
     
+    // Konstruktor uzupelniajacy podstawowe informacje naglowka strony
     Page(page_number number = NULL_PAGE, PageType type = PageType::UNUSED);
+    
+    // Wypelnia sekcje danych zerami
+    void clearData();
 };
 
 

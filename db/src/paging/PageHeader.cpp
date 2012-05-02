@@ -14,7 +14,7 @@ PageHeader::PageHeader(page_number number, PageType type)
 void PageHeader::fill(page_number number, PageType type)
 {
     this->number = number;
-    this->owner = owner;
+    this->owner = NULL_OBJ;
     
     prev = next = NULL_PAGE;
     rows = 0;

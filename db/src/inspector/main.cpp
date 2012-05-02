@@ -1,6 +1,6 @@
 #include "config.h"
 #include "error_msg.h"
-#include "paging/page_manager.h"
+#include "paging/PageManager.h"
 #include "operations.h"
 #include "cmd.h"
 #include <iostream>

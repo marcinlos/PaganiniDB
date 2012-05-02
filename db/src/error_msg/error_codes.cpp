@@ -1,40 +1,59 @@
 #include "config.h"
+#include "pdb_error.h"
+#include <unordered_map>
+#include <string>
 #include <cstddef>
+using std::string;
 
-// Rozmiar tablicy
-static const int ERROR_COUNT = 256;
-
-static int pdb_errno;
-
-// Tablica tekstowych reprezentacji bledow
-static const char* messages[ERROR_COUNT] = {
-    "No error"                     // 0 (PDBE_NOERROR)
-   ,"OMG blood everywhere"         // 1 (PDBE_ARMAGEDON)
-   ,"Cannot create file"           // 2 (PDBE_FILECREATE)
-   ,"Cannot open file"             // 3 (PDBE_FILEOPEN)
-   ,"Write error"                  // 4 (PDBE_WRITE)
-   ,"Read error"                   // 5 (PDBE_READ)
-   ,"Positioning (lseek) error"    // 6 (PDBE_SEEK)
-};
-
-
-int pdbErrno()
+namespace paganini
 {
-    return pdb_errno;
+
+static Error error_code;
+
+
+class ErrorMessages
+{
+    std::unordered_map<Error, string> m;
+
+public:    
+    ErrorMessages();
+    
+    const char* get(Error code) 
+    {
+        auto i = m.find(code);
+        if (i != m.end())
+            return i->second.c_str();
+        else 
+            return nullptr;
+    }
+} 
+messages;
+
+ErrorMessages::ErrorMessages()
+{
+    m[Error::NONE] =        "No error";
+    m[Error::ARMAGEDON] =   "OMG blood everywhere";
+    m[Error::FILECREATE] =  "Cannot create file";
+    m[Error::FILEOPEN] =    "Cannot open file";
+    m[Error::READ] =        "Read error";
+    m[Error::SEEK] =        "Positioning error";
 }
 
-int _pdbSetErrno(int errno)
+Error pdbErrno()
 {
-    pdb_errno = errno;
+    return error_code;
 }
 
-const char* pdbErrorMsg(int error)
+int _pdbSetErrno(Error code)
 {
-    if (error > 0 && error < ERROR_COUNT)
-        return messages[error];
-    return nullptr;
+    error_code = code;
+}
+
+const char* pdbErrorMsg(Error code)
+{
+    return messages.get(code);
 }
 
 
-
+}
 
