@@ -39,30 +39,47 @@ inline bool isUV(page_number page)
     return (page - METADATA_PAGES) % (PAGES_PER_UV + 1) == 0;
 }
 
+class PageManager
+{
+private:
+    int fd;
+    int moveToPage(page_number page);
+    int createHeader();
+    int createUVPage(page_number previous_uv);
+    static page_number findUV(page_number number);
+    page_number readUVOfPage(page_number number, Page* page);
+    int markAsUsed(page_number number);
+    int markAsFree(page_number number);
+    int scanForFree(const Page* uv);
+    int growFile(size32 page_count);
+    page_number findFree();
 
-// Tworzy nowy plik bazy danych - strone naglowka, i pierwsza strone UV.
-int pdbCreateDatabaseFile(const char* path);
+public:
+    // Tworzy nowy plik bazy danych - strone naglowka, i pierwsza strone UV.
+    int createFile(const char* path);
 
-// Inicjalizuje managera stronnicowania przy uzyciu istniejacego pliku
-int pdbPageManagerStart(const char* path);
+    // Inicjalizuje managera stronnicowania przy uzyciu istniejacego pliku
+    int openFile(const char* path);
 
-// Konczy dzialanie managera stronnicowania
-int pdbPageManagerStop();
+    // Konczy dzialanie managera stronnicowania
+    int closeFile();
 
-// Zwraca numer wolnej strony. W razie potrzeby zwieksza rozmiar pliku, i
-// potencjalnie tworzy potrzebne strony UV. Strona jest zaznaczona jako uzywana.
-page_number pdbAllocPage();
+    // Zwraca numer wolnej strony. W razie potrzeby zwieksza rozmiar pliku, i
+    // potencjalnie tworzy potrzebne strony UV. Strona jest zaznaczona jako uzywana.
+    page_number allocPage();
 
-// Zwalnia strone o podanym numerze. Strona jest zaznaczana jako wolna, moze
-// zostac ponownie uzyta.
-int pdbDeletePage(page_number number);
+    // Zwalnia strone o podanym numerze. Strona jest zaznaczana jako wolna, moze
+    // zostac ponownie uzyta.
+    int deletePage(page_number number);
 
-// Wczytuje do podanego bufora strone o zadanym numerze. 
-int pdbReadPage(page_number number, Page* buffer);
+    // Wczytuje do podanego bufora strone o zadanym numerze. 
+    int readPage(page_number number, Page* buffer);
 
-// Zapisuje do strony o podanym numerze dane z bufora. W celu zachowania 
-// spojnosci danych, strona powinna istniec i byc zaznaczona jako uzyta.
-int pdbWritePage(page_number number, const Page* buffer);
+    // Zapisuje do strony o podanym numerze dane z bufora. W celu zachowania 
+    // spojnosci danych, strona powinna istniec i byc zaznaczona jako uzyta.
+    int writePage(page_number number, const Page* buffer);
+
+};
 
 }
 

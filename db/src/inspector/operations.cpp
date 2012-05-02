@@ -6,7 +6,10 @@
 #include <cstdio>
 #include <ctime>
 #include <cstring>
+
 using namespace paganini;
+
+extern PageManager manager;
 
 // Wypisywanie naglowka strony
 
@@ -88,7 +91,7 @@ void print_page_header(const vector<string>& args)
         return;
     }
     Page page;
-    if (pdbReadPage(page_number, &page) < 0)
+    if (manager.readPage(page_number, &page) < 0)
     {
         error_pdb("Nie udalo sie odczytac strony %d", page_number);
         return;
@@ -114,8 +117,8 @@ void _print_db_header(const DatabaseHeader* dbh)
 void print_db_header(const vector<string>& args)
 {
     Page page;
-    DatabaseHeader* dbh = (DatabaseHeader*) page.data;
-    if (pdbReadPage(HEADER_PAGE_NUMBER, &page) < 0)
+    DatabaseHeader* dbh = page.get<DatabaseHeader>();
+    if (manager.readPage(HEADER_PAGE_NUMBER, &page) < 0)
     {
         error_pdb("Nie udalo sie odczytac naglowka pliku");
         return;
@@ -167,7 +170,7 @@ void print_uv_content(const vector<string>& args)
         return;
     }
     Page page;
-    if (pdbReadPage(page_number, &page) < 0)
+    if (manager.readPage(page_number, &page) < 0)
     {
         error_pdb("Nie udalo sie odczytac strony %d", page_number);
         return;

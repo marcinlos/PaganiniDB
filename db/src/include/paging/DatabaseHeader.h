@@ -19,6 +19,7 @@ namespace paganini
 
 struct DatabaseHeader
 {
+    // Maksymalna dlugosc nazwy bazy danych
     static const int MAX_NAME_LENGTH = 256;
     
     // Ilosc stron w pliku

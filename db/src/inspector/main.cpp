@@ -7,7 +7,7 @@
 using namespace paganini;
 
 CommandExecutor executor;
-
+PageManager manager;
 
 void input_loop()
 {
@@ -32,12 +32,12 @@ int main(int argc, char** argv)
     if (argc != 2)
         fatal_usr("Uzycie: insp nazwa_pliku");
 
-    pdbPageManagerStart("dupa");
+    manager.openFile("dupa");
     
     prepare();
     std::cout << "Uzyj 'help' by zobaczyc liste komend" << std::endl;
     input_loop();
     
-    pdbPageManagerStop();
+    manager.closeFile();
     return 0;
 }

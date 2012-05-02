@@ -11,6 +11,7 @@
 #   include <paganini/paging/PageHeader.h>
 #   include <paganini/paging/types.h>
 #endif
+#include <utility>
 
 namespace paganini
 {
@@ -69,7 +70,31 @@ struct Page
     
     // Wypelnia sekcje danych zerami
     void clearData();
+    
+    // Pomocnicze do uzywania sekcji danych
+    template <typename T>
+    T* get()
+    {
+        return reinterpret_cast<T*>(data);
+    }
+
+    template <typename T>
+    const T* get() const
+    {
+        return reinterpret_cast<const T*>(data);
+    }
+    
+    // Umozliwia konstrukcje obiektu w sekcji danych
+    template <typename T, typename... Args>
+    T* create(Args&&... args)
+    {
+        return new (data) T(std::forward<Args>(args)...);
+    }
 };
+
+
+
+
 
 
 }

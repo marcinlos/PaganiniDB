@@ -9,16 +9,17 @@ using namespace paganini;
 int main()
 {
     printf("Size: %d\n", sizeof(Page));
-    if (pdbCreateDatabaseFile("dupa") < 0)
+    PageManager manager;
+    if (manager.createFile("dupa") < 0)
         fatal_pdb("WTF??");
-    pdbPageManagerStart("dupa");
+    manager.openFile("dupa");
     printf("No niby jest\n");
     printf("%u, %u\n", DATA_SIZE, DATA_OFFSET);
     int i;
     for (i = 0; i < 10; ++ i)
     {
-        pdbAllocPage();
+        manager.allocPage();
     }
-    pdbPageManagerStop();
+    manager.closeFile();
     return 0;
 }
