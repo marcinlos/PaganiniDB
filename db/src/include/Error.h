@@ -24,6 +24,7 @@ enum class Error
     ,WRITE              // Blad zapisu
     ,READ               // Blad odczytu
     ,SEEK               // Blad pozycjonowania w pliku
+    ,DATA_TOO_LONG      // Podane dane nie mieszcza sie w typie
 };
 
 

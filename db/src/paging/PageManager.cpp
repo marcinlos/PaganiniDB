@@ -3,7 +3,7 @@
 #include "paging/PageManager.h"
 #include "paging/DatabaseHeader.h"
 #include "Error.h"
-#include "util/Format.h"
+#include "util/format.h"
 #include "util/bits.h"
 #include <fcntl.h>
 #include <string.h>
@@ -12,7 +12,7 @@
 #include <string>
 #include <sstream>
 using std::string;
-using paganini::util::Format;
+using paganini::util::format;
 
 
 namespace paganini
@@ -77,7 +77,7 @@ void PageManager::createFile(const char* path)
     // Tworzymy nowy plik dostepny dla uzytkownika
     if ((fd = open(path, O_CREAT | O_RDWR, S_IWUSR | S_IRUSR)) < 0)
     {
-        throw Exception(Format("Trying to create file '{}'", path), 
+        throw Exception(format("Trying to create file '{}'", path), 
             Error::FILECREATE);
     }
     // Alokujemy miejsce na pierwsze bloki
@@ -88,8 +88,7 @@ void PageManager::createFile(const char* path)
     createUVPage(NULL_PAGE);
     
     // Zamykamy plik - tu tylko tworzymy
-    close(fd);
-    fd = -1;
+    closeFile();
 }
 
 
@@ -97,7 +96,7 @@ void PageManager::openFile(const char* path)
 {
     if ((fd = open(path, O_RDWR)) < 0)
     {
-        throw Exception(Format("Trying to open file '{}'", path), 
+        throw Exception(format("Trying to open file '{}'", path), 
             Error::FILEOPEN);
     }
 }
@@ -106,7 +105,7 @@ void PageManager::openFile(const char* path)
 void PageManager::closeFile()
 {
     close(fd);
-    fd = -1;
+    fd = EMPTY_FD;
 }
 
 
@@ -309,7 +308,7 @@ void PageManager::readPage(page_number number, Page* buffer)
     moveToPage(number);
     if (read(fd, buffer, PAGE_SIZE) < PAGE_SIZE)
     {
-        throw Exception(Format("Trying to write page nr {}", number), 
+        throw Exception(format("Trying to write page nr {}", number), 
             Error::READ);
     }
 }
@@ -320,7 +319,7 @@ void PageManager::writePage(page_number number, const Page* buffer)
     moveToPage(number);
     if (write(fd, buffer, PAGE_SIZE) < PAGE_SIZE)
     {      
-        throw Exception(Format("Trying to write page nr {}", number), 
+        throw Exception(format("Trying to write page nr {}", number), 
             Error::WRITE);
     }
 }

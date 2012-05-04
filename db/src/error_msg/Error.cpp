@@ -30,12 +30,13 @@ messages;
 
 ErrorMessages::ErrorMessages()
 {
-    m[Error::NONE] =        "No error";
-    m[Error::ARMAGEDON] =   "OMG blood everywhere";
-    m[Error::FILECREATE] =  "Cannot create file";
-    m[Error::FILEOPEN] =    "Cannot open file";
-    m[Error::READ] =        "Read error";
-    m[Error::SEEK] =        "Positioning error";
+    m[Error::NONE] =            "No error";
+    m[Error::ARMAGEDON] =       "OMG blood everywhere";
+    m[Error::FILECREATE] =      "Cannot create file";
+    m[Error::FILEOPEN] =        "Cannot open file";
+    m[Error::READ] =            "Read error";
+    m[Error::SEEK] =            "Positioning error";
+    m[Error::DATA_TOO_LONG] =   "Given data is too long for this type";
 }
 
 

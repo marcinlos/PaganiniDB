@@ -40,7 +40,7 @@ inline _Notype _aux_use_next(std::ostringstream& s, const string& format,
 
 // Funkcja wlasciwa
 template <typename... Args>
-inline string Format(const string& format, const Args&... args)
+inline string format(const string& format, const Args&... args)
 {
     std::ostringstream s;
     string::size_type pos;

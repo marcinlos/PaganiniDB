@@ -57,7 +57,6 @@ static const size16 DATA_SIZE = PAGE_SIZE - DATA_OFFSET;
 static const size32 PAGES_PER_UV = 8;
 
 
-
 // Typedefy do surowych danych
 typedef uint8_t* page_data;
 

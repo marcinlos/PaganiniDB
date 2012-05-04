@@ -45,6 +45,7 @@ inline bool isUV(page_number page)
 class PageManager
 {
 private:
+    const static int EMPTY_FD = -1;
     int fd;
     void moveToPage(page_number page);
     void createHeader();
