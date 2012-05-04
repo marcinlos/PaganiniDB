@@ -1,5 +1,5 @@
 #include "config.h"
-#include "pdb_error.h"
+#include "Error.h"
 #include <unordered_map>
 #include <string>
 #include <cstddef>
@@ -8,9 +8,8 @@ using std::string;
 namespace paganini
 {
 
-static Error error_code;
-
-
+// Mala, nieuzywana nigdzie klasa - mapa jest w nia opakowana tylko
+// po to, by mozna w konstruktorze ja wypelnic.
 class ErrorMessages
 {
     std::unordered_map<Error, string> m;
@@ -39,17 +38,8 @@ ErrorMessages::ErrorMessages()
     m[Error::SEEK] =        "Positioning error";
 }
 
-Error pdbErrno()
-{
-    return error_code;
-}
 
-int _pdbSetErrno(Error code)
-{
-    error_code = code;
-}
-
-const char* pdbErrorMsg(Error code)
+const char* get_error_message(Error code)
 {
     return messages.get(code);
 }

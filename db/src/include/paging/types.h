@@ -4,8 +4,8 @@
     spraw z tym zwiazanych, np. endianess.
 */
 
-#ifndef __PAGING_TYPES_H__
-#define __PAGING_TYPES_H__
+#ifndef __PAGANINI_PAGING_TYPES_H__
+#define __PAGANINI_PAGING_TYPES_H__
 
 #include <cstdint>
 
@@ -50,5 +50,5 @@ static const object_id NULL_OBJ = -1;
 
 }
 
-#endif // __PAGING_TYPES_H__ 
+#endif // __PAGANINI_PAGING_TYPES_H__ 
 

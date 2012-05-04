@@ -1,9 +1,10 @@
 /*
-    Definicja naglowka strony.
+    Definicja naglowka strony, oraz typ wyliczeniowy opisujacy rodzaj
+    strony.
 */
 
-#ifndef __PAGING_PAGE_HEADER_H__
-#define __PAGING_PAGE_HEADER_H__
+#ifndef __PAGANINI_PAGING_PAGE_HEADER_H__
+#define __PAGANINI_PAGING_PAGE_HEADER_H__
 
 #ifdef _PAGANINI
 #   include "paging/types.h"
@@ -51,7 +52,7 @@ struct PageHeader
     // Wypelnia informacje naglowka (dziala tak samo, jak konstruktor)
     void fill(page_number number, PageType type = PageType::UNUSED);
     
-    PageHeader(page_number number, PageType type = PageType::UNUSED);
+    explicit PageHeader(page_number number, PageType type = PageType::UNUSED);
 }; 
 
 static const int HEADER_SIZE = sizeof(PageHeader);
@@ -59,5 +60,5 @@ static const int HEADER_SIZE = sizeof(PageHeader);
 }
 
 
-#endif // __PAGING_PAGE_HEADER_H__
+#endif // __PAGANINI_PAGING_PAGE_HEADER_H__
 

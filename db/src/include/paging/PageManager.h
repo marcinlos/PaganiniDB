@@ -1,8 +1,9 @@
 /*
-    Zestaw niskopoziomowych funkcji umozliwiajacy dostep do pliku z danymi.
+   Klasa udostepniajaca niskopoziomowy (oparty na stronach) dostep do
+   pliku z danymi.
 */
-#ifndef __PAGING_PAGE_MANAGER_H__
-#define __PAGING_PAGE_MANAGER_H__
+#ifndef __PAGANINI_PAGING_PAGE_MANAGER_H__
+#define __PAGANINI_PAGING_PAGE_MANAGER_H__
 
 #ifdef _PAGANINI
 #   include "paging/Page.h"
@@ -39,30 +40,32 @@ inline bool isUV(page_number page)
     return (page - METADATA_PAGES) % (PAGES_PER_UV + 1) == 0;
 }
 
+// Manager stronnicowania, odpowiedzialny za tworzenie fizycznych plikow
+// bazy danych, jak rowniez zapis/odczyt stron.
 class PageManager
 {
 private:
     int fd;
-    int moveToPage(page_number page);
-    int createHeader();
-    int createUVPage(page_number previous_uv);
+    void moveToPage(page_number page);
+    void createHeader();
+    page_number createUVPage(page_number previous_uv);
     static page_number findUV(page_number number);
     page_number readUVOfPage(page_number number, Page* page);
-    int markAsUsed(page_number number);
-    int markAsFree(page_number number);
+    bool markAsUsed(page_number number);
+    bool markAsFree(page_number number);
     int scanForFree(const Page* uv);
-    int growFile(size32 page_count);
+    void growFile(size32 page_count);
     page_number findFree();
 
 public:
     // Tworzy nowy plik bazy danych - strone naglowka, i pierwsza strone UV.
-    int createFile(const char* path);
+    void createFile(const char* path);
 
     // Inicjalizuje managera stronnicowania przy uzyciu istniejacego pliku
-    int openFile(const char* path);
+    void openFile(const char* path);
 
     // Konczy dzialanie managera stronnicowania
-    int closeFile();
+    void closeFile();
 
     // Zwraca numer wolnej strony. W razie potrzeby zwieksza rozmiar pliku, i
     // potencjalnie tworzy potrzebne strony UV. Strona jest zaznaczona jako uzywana.
@@ -70,18 +73,18 @@ public:
 
     // Zwalnia strone o podanym numerze. Strona jest zaznaczana jako wolna, moze
     // zostac ponownie uzyta.
-    int deletePage(page_number number);
+    bool deletePage(page_number number);
 
     // Wczytuje do podanego bufora strone o zadanym numerze. 
-    int readPage(page_number number, Page* buffer);
+    void readPage(page_number number, Page* buffer);
 
     // Zapisuje do strony o podanym numerze dane z bufora. W celu zachowania 
     // spojnosci danych, strona powinna istniec i byc zaznaczona jako uzyta.
-    int writePage(page_number number, const Page* buffer);
+    void writePage(page_number number, const Page* buffer);
 
 };
 
 }
 
-#endif // __PAGING_PAGE_MANAGER_H__
+#endif // __PAGANINI_PAGING_PAGE_MANAGER_H__
 

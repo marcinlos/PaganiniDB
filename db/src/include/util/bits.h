@@ -1,5 +1,9 @@
-#ifndef __UTIL_BITS_H__
-#define __UTIL_BITS_H__
+/*
+    Funkcje pomocnicze do manipulacji na bitach. Uzywane glownie przez
+    managera stronnicowania i system UV.
+*/
+#ifndef __PAGANINI_UTIL_BITS_H__
+#define __PAGANINI_UTIL_BITS_H__
 
 #include <cstdint>
 
@@ -57,7 +61,9 @@ inline int first_nonzero_bit(unsigned char byte)
     else return -1;
 }
 
-}
-}
+} // util
+} // paganini
 
-#endif // __UTIL_BITS_H__
+#endif // __PAGANINI_UTIL_BITS_H__
+
+

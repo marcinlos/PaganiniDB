@@ -20,7 +20,7 @@ void PageHeader::fill(page_number number, PageType type)
     rows = 0;
     free_space = DATA_SIZE;
     free_offset = DATA_OFFSET;
-    setPageType(flags, type);
+    set_page_type(flags, type);
 }
 
         

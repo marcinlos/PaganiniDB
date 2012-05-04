@@ -1,14 +1,10 @@
 #include "config.h"
-#include "pdb_error.h"
 #include <cstdio>
 #include <cerrno>
 #include <cstdlib>
 #include <cstdarg>
 #include <cstring>
 
-using paganini::Error;
-using paganini::pdbErrno;
-using paganini::pdbErrorMsg;
 
 const static int _MAX_MSG_LEN = 1024;
 
@@ -59,31 +55,3 @@ void error_usr(const char* text, ...)
 }
 
 
-static void _pdb_error_core(Error error, const char* text, va_list args)
-{
-    char buffer[_MAX_MSG_LEN];
-    vsprintf(buffer, text, args);
-    if (error != Error::NONE)
-        sprintf(buffer + strlen(buffer), "\nPowod: %s", pdbErrorMsg(error));
-        
-    strcat(buffer, "\n");
-    fputs(buffer, stderr);
-    fflush(nullptr);
-}
-
-void fatal_pdb(const char* text, ...)
-{
-    va_list args;
-    va_start(args, text);
-    _pdb_error_core(pdbErrno(), text, args);
-    va_end(args);
-    exit(-1);
-}
-
-void error_pdb(const char* text, ...)
-{
-    va_list args;
-    va_start(args, text);
-    _pdb_error_core(pdbErrno(), text, args);
-    va_end(args);
-}

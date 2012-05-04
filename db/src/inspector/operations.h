@@ -1,5 +1,5 @@
-#ifndef _OPERATIONS_H
-#define _OPERATIONS_H
+#ifndef __OPERATIONS_H__
+#define __OPERATIONS_H__
 
 #include <string>
 #include <vector>
@@ -12,4 +12,4 @@ void print_db_header(const vector<string>& args);
 
 void print_uv_content(const vector<string>& args);
 
-#endif /* ! _OPERATIONS_H */
+#endif /* ! __OPERATIONS_H__ */

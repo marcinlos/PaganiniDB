@@ -21,15 +21,16 @@ void fatal_usr(const char* text, ...);
     Blad niesystemowy nie powodujacy zakonczenia dzialania programu.
 */
 void error_usr(const char* text, ...);
-
+/*
 /*
     Krytyczny blad bazy danych
-*/
+
 void fatal_pdb(const char* text, ...);
 
 /*
     Blad bazy danych nie powodujacy zakonczenia dzialania programu.
-*/
+
 void error_pdb(const char* text, ...);
+*/
 
 #endif /* ! _ERROR_MSG_H */

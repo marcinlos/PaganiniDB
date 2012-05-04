@@ -1,5 +1,6 @@
 #include "config.h"
 #include "error_msg.h"
+#include "Error.h"
 #include "paging/PageManager.h"
 #include "operations.h"
 #include "cmd.h"
@@ -31,13 +32,20 @@ int main(int argc, char** argv)
 {
     if (argc != 2)
         fatal_usr("Uzycie: insp nazwa_pliku");
-
-    manager.openFile("dupa");
-    
-    prepare();
-    std::cout << "Uzyj 'help' by zobaczyc liste komend" << std::endl;
-    input_loop();
-    
-    manager.closeFile();
+    try
+    {
+        manager.openFile(argv[1]);
+        
+        prepare();
+        std::cout << "Uzyj 'help' by zobaczyc liste komend" << std::endl;
+        input_loop();
+        
+        manager.closeFile();
+    }
+    catch (paganini::Exception& e)
+    {
+        std::cout << "Fatal error: " << e.what() << std::endl
+            << e.getCodeMessage() << std::endl;
+    }
     return 0;
 }

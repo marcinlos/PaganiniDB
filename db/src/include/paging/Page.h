@@ -1,8 +1,10 @@
 /*
-    Definicje flag/makr dotyczacych stron.
+    Definicje flag/makr dotyczacych stron, oraz sama klasa strony.
+    Zawarta jest tu wiekszosc definicji sterujacych rozmiarami
+    uzywanych struktur danych.
 */
-#ifndef __PAGING_PAGE_H__
-#define __PAGING_PAGE_H__
+#ifndef __PAGANINI_PAGING_PAGE_H__
+#define __PAGANINI_PAGING_PAGE_H__
 
 #ifdef _PAGANINI
 #   include "paging/PageHeader.h"
@@ -25,13 +27,13 @@ static const int BITS_PER_PAGE_TYPE = 4;
 static const page_flags PAGE_TYPE_MASK = (1 << BITS_PER_PAGE_TYPE) - 1;
 
 // Makro zwracajace typ strony z podanej flagi
-inline PageType getPageType(page_flags flags) 
+inline PageType get_page_type(page_flags flags) 
 { 
     return static_cast<PageType>(flags & PAGE_TYPE_MASK); 
 }
 
 // Makro ustawiajace typ strony na podanej fladze
-inline void setPageType(page_flags& flags, PageType type)
+inline void set_page_type(page_flags& flags, PageType type)
 {
     flags &= ~PAGE_TYPE_MASK;
     flags |= static_cast<page_flags>(type);
@@ -60,13 +62,16 @@ static const size32 PAGES_PER_UV = 8;
 typedef uint8_t* page_data;
 
 
+// Klasa strony. Udostepnia sekcje naglowka i danych, jak rowniez metody
+// pomocnicze get() i create().
 struct Page
 {
     PageHeader header;
     uint8_t data[DATA_SIZE];
     
     // Konstruktor uzupelniajacy podstawowe informacje naglowka strony
-    Page(page_number number = NULL_PAGE, PageType type = PageType::UNUSED);
+    explicit Page(page_number number = NULL_PAGE, 
+        PageType type = PageType::UNUSED);
     
     // Wypelnia sekcje danych zerami
     void clearData();
@@ -94,10 +99,7 @@ struct Page
 
 
 
-
-
-
 }
 
-#endif // __PAGING_PAGE_H__
+#endif // __PAGANINI_PAGING_PAGE_H__
 

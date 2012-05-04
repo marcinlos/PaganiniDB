@@ -3,8 +3,8 @@
     strony pliku.
 */
 
-#ifndef __PAGING_DBFILE_HEADER_H__
-#define __PAGING_DBFILE_HEADER_H__
+#ifndef __PAGANINI_PAGING_DATABASE_HEADER_H__
+#define __PAGANINI_PAGING_DATABASE_HEADER_H__
 
 #ifdef _PAGANINI
 #   include "paging/types.h"
@@ -32,10 +32,10 @@ struct DatabaseHeader
     timestamp creation_time;
     
     // Wypelnia naglowek odpowiednimi wartosciami
-    DatabaseHeader(const string& name, size32 page_count = 1);
+    explicit DatabaseHeader(const string& name, size32 page_count = 1);
 };
 
 }
 
-#endif // __PAGING_DBFILE_HEADER_H__
+#endif // __PAGANINI_PAGING_DATABASE_HEADER_H__
 

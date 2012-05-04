@@ -2,6 +2,7 @@
 #include "paging/PageManager.h"
 #include "paging/DatabaseHeader.h"
 #include "error_msg.h"
+#include "Error.h"
 #include "operations.h"
 #include <cstdio>
 #include <ctime>
@@ -33,7 +34,7 @@ static char* _str_object_id(char* buffer, object_id id)
 
 static const char* _str_page_type(page_flags flags)
 {
-    PageType type = getPageType(flags);
+    PageType type = get_page_type(flags);
     switch (type)
     {
     case PageType::UNUSED: return "unused";
@@ -91,9 +92,11 @@ void print_page_header(const vector<string>& args)
         return;
     }
     Page page;
-    if (manager.readPage(page_number, &page) < 0)
+    try { manager.readPage(page_number, &page); }
+    catch (Exception& e)
     {
-        error_pdb("Nie udalo sie odczytac strony %d", page_number);
+        printf("%s\n%s\n", e.what(), e.getCodeMessage());
+        error_usr("Nie udalo sie odczytac strony %d", page_number);
         return;
     }
     _print_page_header(&page.header);    
@@ -118,9 +121,11 @@ void print_db_header(const vector<string>& args)
 {
     Page page;
     DatabaseHeader* dbh = page.get<DatabaseHeader>();
-    if (manager.readPage(HEADER_PAGE_NUMBER, &page) < 0)
+    try { manager.readPage(HEADER_PAGE_NUMBER, &page); }
+    catch (Exception& e)
     {
-        error_pdb("Nie udalo sie odczytac naglowka pliku");
+        printf("%s\n%s\n", e.what(), e.getCodeMessage());
+        error_usr("Nie udalo sie odczytac naglowka pliku");
         return;
     }
     _print_db_header(dbh);   
@@ -170,9 +175,11 @@ void print_uv_content(const vector<string>& args)
         return;
     }
     Page page;
-    if (manager.readPage(page_number, &page) < 0)
+    try { manager.readPage(page_number, &page); }
+    catch (Exception& e)
     {
-        error_pdb("Nie udalo sie odczytac strony %d", page_number);
+        printf("%s\n%s\n", e.what(), e.getCodeMessage());
+        error_usr("Nie udalo sie odczytac strony %d", page_number);
         return;
     }
     _print_uv_content(&page);
