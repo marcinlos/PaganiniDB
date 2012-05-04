@@ -1,10 +1,10 @@
 #include "config.h"
-#include "paging/Page.h"
-#include "paging/PageManager.h"
-#include "Error.h"
-#include "row/datatypes.h"
-#include "row/RowFormat.h"
-#include "row/Row.h"
+#include <paganini/paging/Page.h>
+#include <paganini/paging/PageManager.h>
+#include <paganini/Error.h>
+#include <paganini/row/datatypes.h>
+#include <paganini/row/RowFormat.h>
+#include <paganini/row/Row.h>
 #include <cstdio>
 using namespace paganini;
 

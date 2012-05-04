@@ -1,16 +1,15 @@
 /*
-    Bazodanowe typy danych - klasa bazowa, oraz implementacje.
+    Definicje zwiazane z reprezentacja bazodanowych typow danych w systemie.
+    Zdefiniowany jest tu typ wyliczeniowy okreslajacy rodzaj danej, oraz
+    klasa bazowa dla typow je reprezentujacych. Naglowek zawiera rowniez
+    szablon implementacji dla typow POD, oraz definicje klas dla typow
+    tekstowych.
 */
 #ifndef __PAGANINI_ROW_DATATYPES_H__
 #define __PAGANINI_ROW_DATATYPES_H__
 
-#ifdef _PAGANINI
-#   include "paging/Page.h"
-#   include "paging/types.h"
-#else 
-#   include <paganini/paging/Page.h>
-#   include <paganini/paging/types.h>
-#endif
+#include <paganini/paging/Page.h>
+#include <paganini/paging/types.h>
 #include <string>
 #include <cstring>
 using std::string;
@@ -105,7 +104,7 @@ namespace types
     };
     
     // Dla podstawowych typow numerycznych wystarczy
-    typedef GenericWrapper<int, FieldType::Int> Int;
+    typedef GenericWrapper<int32_t, FieldType::Int> Int;
     typedef GenericWrapper<float, FieldType::Float> Float;
     typedef GenericWrapper<page_number, FieldType::PageNumber> PageNumber;
     

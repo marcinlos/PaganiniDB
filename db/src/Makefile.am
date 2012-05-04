@@ -1,6 +1,6 @@
 SUBDIRS = error_msg paging row
 
-AM_CPPFLAGS = -iquote include
+AM_CPPFLAGS = -I include
 
 lib_LTLIBRARIES = libpaganini.la
 libpaganini_la_SOURCES = 
@@ -9,11 +9,13 @@ libpaganini_la_LIBADD = error_msg/liberrormsg.la \
                         row/librow.la
 
 libpaganini_la_includedir = ${includedir}/paganini
-libpaganini_la_include_HEADERS = include/paganini.h \
-                                 include/util/bits.h \
-                                 include/util/format.h \
-                                 include/util/IndexedIterator.h \
-                                 include/util/IndexedView.h
+libpaganini_la_include_HEADERS = include/paganini/paganini.h
+
+utildir = ${includedir}/paganini/util
+util_HEADERS = include/paganini/util/bits.h \
+               include/paganini/util/format.h \
+               include/paganini/util/IndexedIterator.h \
+               include/paganini/util/IndexedView.h
 
 noinst_PROGRAMS = test insp
 test_SOURCES = test.cpp

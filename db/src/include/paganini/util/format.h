@@ -19,9 +19,11 @@ namespace util
 // Ciag znakow oznaczajacy miejsce na argument
 const string PLACEHOLDER = "{}";
 
+
 struct _Notype {};
+
     
-// Funkcja pomocnicza 
+// Funkcja pomocnicza - sluzy jako typowe, perfidne domkniecie
 template <typename T>
 inline _Notype _aux_use_next(std::ostringstream& s, const string& format,
     string::size_type& pos, const T& val)
@@ -38,14 +40,18 @@ inline _Notype _aux_use_next(std::ostringstream& s, const string& format,
     return {};
 }
 
+
 // Funkcja wlasciwa
 template <typename... Args>
 inline string format(const string& format, const Args&... args)
 {
     std::ostringstream s;
     string::size_type pos;
+    
+    // Iterujemy po argumentach - nie bardzo jest jak latwiej
     std::initializer_list<_Notype>{ _aux_use_next(s, format, pos, args)... };
     
+    // Dopisujemy koncowke
     if (! format.empty())
         s.write(format.data() + pos, format.size() - pos);
     return s.str();

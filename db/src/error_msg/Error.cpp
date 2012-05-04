@@ -1,5 +1,5 @@
 #include "config.h"
-#include "Error.h"
+#include <paganini/Error.h>
 #include <unordered_map>
 #include <string>
 #include <cstddef>

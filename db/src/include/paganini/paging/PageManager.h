@@ -5,11 +5,8 @@
 #ifndef __PAGANINI_PAGING_PAGE_MANAGER_H__
 #define __PAGANINI_PAGING_PAGE_MANAGER_H__
 
-#ifdef _PAGANINI
-#   include "paging/Page.h"
-#else 
-#   include <paganini/paging/Page.h>
-#endif
+#include <paganini/paging/Page.h>
+
 
 namespace paganini
 {

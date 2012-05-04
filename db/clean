@@ -10,3 +10,6 @@ FILELIST="autoscan.log autom4te.cache bin aclocal.m4 configure \
     COPYING depcomp INSTALL install-sh libtool ltmain.sh missing stamp-h1"
 rm -rf ${FILELIST}
 
+rm src/insp
+rm src/test
+rm dupa

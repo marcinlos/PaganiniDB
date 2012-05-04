@@ -54,6 +54,7 @@ public:
         return error;
     }
     
+    // Zwraca stringa bedacego statycznym opisem kodu bledu
     const char* getCodeMessage() const
     {
         return get_error_message(error);
@@ -76,3 +77,5 @@ namespace std
 }
 
 #endif // __PAGANINI_ERROR_H__
+
+

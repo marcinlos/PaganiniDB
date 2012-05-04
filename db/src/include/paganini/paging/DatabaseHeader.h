@@ -6,11 +6,7 @@
 #ifndef __PAGANINI_PAGING_DATABASE_HEADER_H__
 #define __PAGANINI_PAGING_DATABASE_HEADER_H__
 
-#ifdef _PAGANINI
-#   include "paging/types.h"
-#else 
-#   include <paganini/paging/types.h>
-#endif
+#include <paganini/paging/types.h>
 #include <string>
 using std::string;
 

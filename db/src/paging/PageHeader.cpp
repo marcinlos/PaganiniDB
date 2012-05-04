@@ -1,6 +1,6 @@
 #include "config.h"
-#include "paging/PageHeader.h"
-#include "paging/Page.h"
+#include <paganini/paging/PageHeader.h>
+#include <paganini/paging/Page.h>
 
 namespace paganini
 {

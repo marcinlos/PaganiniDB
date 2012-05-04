@@ -1,8 +1,8 @@
 #include "config.h"
-#include "paging/PageManager.h"
-#include "paging/DatabaseHeader.h"
-#include "error_msg.h"
-#include "Error.h"
+#include <paganini/paging/PageManager.h>
+#include <paganini/paging/DatabaseHeader.h>
+#include <paganini/error_msg.h>
+#include <paganini/Error.h>
 #include "operations.h"
 #include <cstdio>
 #include <ctime>

@@ -2,15 +2,11 @@
     Definicja naglowka strony, oraz typ wyliczeniowy opisujacy rodzaj
     strony.
 */
-
 #ifndef __PAGANINI_PAGING_PAGE_HEADER_H__
 #define __PAGANINI_PAGING_PAGE_HEADER_H__
 
-#ifdef _PAGANINI
-#   include "paging/types.h"
-#else 
-#   include <paganini/paging/types.h>
-#endif
+#include <paganini/paging/types.h>
+
 
 namespace paganini
 {

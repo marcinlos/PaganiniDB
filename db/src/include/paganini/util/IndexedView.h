@@ -6,12 +6,9 @@
 #ifndef __PAGANINI_UTIL_INDEXED_VIEW_H__
 #define __PAGANINI_UTIL_INDEXED_VIEW_H__
 
-#ifdef _PAGANINI
-#   include "util/IndexedIterator.h"
-#else 
-#   include <paganini/util/IndexedIterator.h>
-#endif
+#include <paganini/util/IndexedIterator.h>
 #include <iterator>
+
 
 namespace paganini
 {
@@ -35,6 +32,7 @@ public:
     {
     }
     
+    // Jedynie wersje stale - nie ma mozliwosci zmiany danych.
     const_iterator begin() const
     {
         return const_iterator(_begin, _values);

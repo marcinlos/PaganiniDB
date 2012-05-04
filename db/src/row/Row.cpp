@@ -1,5 +1,8 @@
 #include "config.h"
-#include "row/Row.h"
+#include <paganini/row/Row.h>
+#include <paganini/util/format.h>
+#include <stdexcept>
+
 
 namespace paganini
 {
@@ -51,6 +54,8 @@ const RowFormat& Row::format() const
 }
 
 
+// Forwardujemy po prostu do wektora
+
 Row::iterator Row::begin()
 {
     return _fields.begin();
@@ -74,6 +79,8 @@ Row::const_iterator Row::end() const
     return _fields.end();
 }
 
+
+// A tu forwardujemy do RowFormat...
 
 size16 Row::columnCount() const
 {
@@ -118,6 +125,8 @@ column_number Row::getColumnNumber(const string& name) const
     return _format.getColumnNumber(name);
 }
 
+
+// Implementacja identyczna jak w RowFormatterze
 
 Row::DataPtr Row::operator [] (const string& name)
 {

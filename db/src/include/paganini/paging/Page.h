@@ -5,15 +5,11 @@
 */
 #ifndef __PAGANINI_PAGING_PAGE_H__
 #define __PAGANINI_PAGING_PAGE_H__
-
-#ifdef _PAGANINI
-#   include "paging/PageHeader.h"
-#   include "paging/types.h"
-#else 
-#   include <paganini/paging/PageHeader.h>
-#   include <paganini/paging/types.h>
-#endif
+ 
+#include <paganini/paging/PageHeader.h>
+#include <paganini/paging/types.h>
 #include <utility>
+
 
 namespace paganini
 {
@@ -61,8 +57,8 @@ static const size32 PAGES_PER_UV = 8;
 typedef uint8_t* page_data;
 
 
-// Klasa strony. Udostepnia sekcje naglowka i danych, jak rowniez metody
-// pomocnicze get() i create().
+// Klasa strony - niewiele ponad bufor. Udostepnia sekcje naglowka i danych, 
+// jak rowniez metody pomocnicze get() i create().
 struct Page
 {
     PageHeader header;

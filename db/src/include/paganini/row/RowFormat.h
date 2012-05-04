@@ -1,18 +1,15 @@
 /*
-    Opis danych przechowywanych w pojedynczym wierszu.
+    Opis danych przechowywanych w pojedynczym wierszu. Struktura Column 
+    opisuje pojedyncza kolumne w wierszu - jej typ, flagi itd. 
+    RowFormat przechowuje liste tych kolumn, i umozliwia dostep do nich
+    w rozmaity sposob - przez indeks, nazwe itp.
 */
 #ifndef __PAGANINI_ROW_ROW_FORMAT_H__
 #define __PAGANINI_ROW_ROW_FORMAT_H__
 
-#ifdef _PAGANINI
-#   include "paging/types.h"
-#   include "row/datatypes.h"
-#   include "util/IndexedView.h"
-#else 
-#   include <paganini/paging/types.h>
-#   include <paganini/row/datatypes.h>
-#   include <util/IndexedView.h>
-#endif
+#include <paganini/paging/types.h>
+#include <paganini/row/datatypes.h>
+#include <paganini/util/IndexedView.h>
 #include <string>
 #include <vector>
 #include <unordered_map>

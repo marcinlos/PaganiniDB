@@ -1,7 +1,7 @@
 #include "config.h"
-#include "error_msg.h"
-#include "Error.h"
-#include "paging/PageManager.h"
+#include <paganini/error_msg.h>
+#include <paganini/Error.h>
+#include <paganini/paging/PageManager.h>
 #include "operations.h"
 #include "cmd.h"
 #include <iostream>

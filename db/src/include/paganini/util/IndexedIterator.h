@@ -1,7 +1,8 @@
 /*
     'Zlozenie' dwoch iteratorow: jeden opisuje sama kolekcje, po ktorej
     iterujemy, drugi kolekcje indeksow do niej.
-    Na chwile obecna iterator jest random_access.
+    Iterator jest random access, jesli tylko iterator
+    indeksow rowniez jest tego rodzaju.
 */
 #ifndef __PAGANINI_UTIL_INDEXED_ITERATOR_H__
 #define __PAGANINI_UTIL_INDEXED_ITERATOR_H__
@@ -23,11 +24,10 @@ private:
     ValueIterator begin;
     
 public:
-    // Dla STLa
+
     typedef std::iterator_traits<ValueIterator> ValueTraits;
     typedef std::iterator_traits<IndexIterator> IndexTraits;
-    // typedef typename IndexTraits::iterator_category iterator_category;
-    typedef std::bidirectional_iterator_tag iterator_category;
+    typedef typename IndexTraits::iterator_category iterator_category;
     typedef typename ValueTraits::value_type value_type;
     typedef typename ValueTraits::difference_type difference_type;
     typedef typename ValueTraits::pointer pointer;

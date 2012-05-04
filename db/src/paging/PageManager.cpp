@@ -1,10 +1,10 @@
 #include "config.h"
-#include "paging/Page.h"
-#include "paging/PageManager.h"
-#include "paging/DatabaseHeader.h"
-#include "Error.h"
-#include "util/format.h"
-#include "util/bits.h"
+#include <paganini/paging/Page.h>
+#include <paganini/paging/PageManager.h>
+#include <paganini/paging/DatabaseHeader.h>
+#include <paganini/Error.h>
+#include <paganini/util/format.h>
+#include <paganini/util/bits.h>
 #include <fcntl.h>
 #include <string.h>
 #include <time.h>

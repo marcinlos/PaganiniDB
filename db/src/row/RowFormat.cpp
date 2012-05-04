@@ -1,6 +1,6 @@
 #include "config.h"
-#include "row/RowFormat.h"
-#include "util/format.h"
+#include <paganini/row/RowFormat.h>
+#include <paganini/util/format.h>
 #include <stdexcept>
 
 namespace paganini

@@ -1,21 +1,16 @@
 /*
     Klasa wiersza tabeli bazy danych, odpowiedzialna za zarzadzanie 
-    jego danymi.
+    jego danymi. Jest iterowalna, ma ladnie poprzeciazane operatory
+    tablicowe i w ogole. Umozliwia dostep do pol przez indeks lub
+    nazwe. Dane przechowywane sa jako shared pointery.
 */
 #ifndef __PAGANINI_ROW_ROW_H__
 #define __PAGANINI_ROW_ROW_H__
-#ifdef _PAGANINI
-#   include "row/datatypes.h"
-#   include "row/RowFormat.h"
-#else 
-#   include <paganini/row/datatypes.h>
-#   include <paganini/row/RowFormat.h>
-#endif
+
+#include <paganini/row/datatypes.h>
+#include <paganini/row/RowFormat.h>
 #include <vector>
 #include <memory>
-
-#include <stdexcept>
-#include "util/format.h"
 
 
 namespace paganini

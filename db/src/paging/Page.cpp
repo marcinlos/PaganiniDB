@@ -1,5 +1,5 @@
 #include "config.h"
-#include "paging/Page.h"
+#include <paganini/paging/Page.h>
 #include <cstring>
 
 namespace paganini

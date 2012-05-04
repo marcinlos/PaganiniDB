@@ -28,6 +28,7 @@ inline void unset_bit(uint8_t* data, int bit)
     *data &= ~(1 << (bit % 8));
 }
 
+
 // Znajduje niezerowy bit w podanym bajcie. Jesli go nie ma, zwraca -1.
 // Perfidne wyszukiwanie binarne... 
 inline int first_nonzero_bit(unsigned char byte)
