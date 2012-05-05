@@ -16,6 +16,7 @@
 #include <iostream>
 using std::string;
 
+
 namespace paganini
 {
 
@@ -31,7 +32,11 @@ static const column_number NULL_COLUMN = -1;
 
 namespace types
 {
-    // Maska zmiennego rozmiaru
+    // Stala oznaczajaca, ze wielkosc typu nie jest znana na etapie kompilacji.
+    // Wciaz jednak moze byc stala (typ tekstowy)
+    static const size16 VARIABLE_SIZE = -1;
+    
+    // Maska zmiennego rozmiaru do typow
     static const int VARIABLE_MASK = 1 << 7;
     
     // Dostepne rodzaje pol... Troche to redundancji wprowadza, ale
@@ -48,6 +53,11 @@ namespace types
         VarChar = VARIABLE_MASK
     };
     
+    // Statyczne informacje o typach
+    template <FieldType type>
+    struct FieldTypeTraits;
+    
+    
     // Funkcja sprawdzajaca, czy typ jest typem zmiennej dlugosci
     inline bool is_variable_size(FieldType type)
     {
@@ -57,9 +67,7 @@ namespace types
     
     // Abstrakcyjna klasa bazowa dla typow danych
     struct Data
-    {
-        static const size16 VARIABLE = -1;
-        
+    {  
         // Zapisuje dane do bufora. Zwraca ilosc zapisanych bajtow
         virtual size16 writeTo(page_data buffer) const = 0;
         
@@ -128,11 +136,7 @@ namespace types
         string val;
         size16 max_length;
         
-        explicit Char(size16 length): max_length(length) 
-        {
-        }
-        
-        Char(size16 length, const string& val): val(val), 
+        explicit Char(size16 length, const string& val = ""): val(val), 
             max_length(length)
         {
         }
@@ -178,13 +182,51 @@ namespace types
             val = string(begin, end);
         }
         
-        size16 fieldSize() const { return VARIABLE; }
+        size16 fieldSize() const { return VARIABLE_SIZE; }
         size16 size() const { return val.size(); }
         FieldType type() const { return FieldType::VarChar; }
         
         string toString() const { return val; }
     };
-};
+    
+    
+    // Opis pol
+    
+    template <>
+    struct FieldTypeTraits<FieldType::Int>
+    {
+        static const size16 size = 4;
+        typedef Int DefaultClass;   
+    };
+    
+    template <>
+    struct FieldTypeTraits<FieldType::PageNumber>
+    {
+        static const size16 size = sizeof(page_number);
+        typedef PageNumber DefaultClass;   
+    };
+    
+    template <>
+    struct FieldTypeTraits<FieldType::Float>
+    {
+        static const size16 size = sizeof(float);
+        typedef Float DefaultClass;
+    };
+    
+    template <>
+    struct FieldTypeTraits<FieldType::Char>
+    {
+        static const size16 size = VARIABLE_SIZE;
+        typedef Char DefaultClass;
+    };
+    
+    template <>
+    struct FieldTypeTraits<FieldType::VarChar>
+    {
+        static const size16 size = VARIABLE_SIZE;
+        typedef VarChar DefaultClass;
+    };
+}
 
 }
 

@@ -26,10 +26,12 @@ struct Column
     column_number col;
     types::FieldType type;
     column_flags flags;
+    size16 size;
     string name;
     
     // Brak numeru kolumny - ustawiana przy wstawianiu do danych wiersza
-    Column(types::FieldType type, string name, column_flags flags = 0);
+    Column(types::FieldType type, string name, column_flags flags = 0,
+        size16 size = 0);
     
     // Konstruktor przenoszacy, unika kopiowania stringa
     Column(Column&& other);
@@ -48,6 +50,7 @@ private:
     std::vector<int> _fixed;
     std::vector<int> _variable;
     std::unordered_map<string, int> names;
+    size16 _fixed_size;
     
 public:
 
@@ -75,6 +78,9 @@ public:
     
     // Zwraca ilosc kolumn o stalym rozmiarze
     size16 fixedColumnCount() const;
+    
+    // Zwraca laczna dlugosc pol o stalym rozmiarze
+    size16 totalFixedSize() const;
     
     // Zwraca ilosc kolumn o zmiennym rozmiarze
     size16 variableColumnCount() const;

@@ -25,7 +25,6 @@ private:
     typedef std::shared_ptr<const types::Data> ConstDataPtr;
     typedef std::vector<DataPtr> container;
     container _fields;
-    size16 _count;
 
 public:
     typedef util::IndexedView<std::vector<int>::const_iterator,
@@ -33,6 +32,25 @@ public:
         
     typedef typename container::iterator iterator;
     typedef typename container::const_iterator const_iterator;
+    
+    // Proxy do pol - zapobiega ustawieniu nieprawidlowych pol
+    class FieldProxy
+    {
+        Row& row;
+        const size16 index;
+        
+    public:
+        FieldProxy(Row& row, size16 index): row(row), index(index) { }
+        operator DataPtr () { return row._fields[index]; }
+        FieldProxy& operator = (types::Data* data)
+        {
+            row.setField(index, data);
+            return *this;
+        }
+        DataPtr operator -> () const { return row._fields[index]; }
+        types::Data& operator * () const { return *(row._fields[index]); }
+    };
+    
 
     // Inicjalizuje wiersz wskaznikami do danych
     Row(const RowFormat& format, std::initializer_list<types::Data*> fields);
@@ -43,8 +61,8 @@ public:
     // Move constructor
     Row(Row&& other);
     
-    // Dodaje dane do wiersza
-    void appendField(types::Data* data);   
+    // Ustawia podane pole na zadana wartosc
+    void setField(size16 index, types::Data* data);   
     
     // Zwraca format wiersza
     const RowFormat& format() const;
@@ -79,12 +97,12 @@ public:
     
     // Zwraca wskaznik na dane z kolumny o podanej nazwie. 
     // Rzuca std::logic_error, jesli kolumna o takiej nazwie nie istnieje.
-    DataPtr operator [] (const string& name);
+    FieldProxy operator [] (const string& name);
     
     ConstDataPtr operator [] (const string& name) const;
     
     // Zwraca wskaznik do danych w kolumnie o podanym numerze.
-    DataPtr operator [] (column_number col);
+    FieldProxy operator [] (column_number col);
     
     ConstDataPtr operator [] (column_number col) const;
 };

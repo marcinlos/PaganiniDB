@@ -10,37 +10,35 @@ namespace paganini
 // Wektor inicjalizujemy nullptr-ami, alokujemy od razu na calosc
 Row::Row(const RowFormat& format, std::initializer_list<types::Data*> fields):
     _format(format), 
-    _fields(format.columnCount(), nullptr), 
-    _count(0)
+    _fields(format.columnCount(), nullptr)
 {
+    int i = 0;
     for (types::Data* data: fields)
-        appendField(data);
+        setField(i++, data);
 }
 
 
 Row::Row(const RowFormat& format): 
     _format(format), 
-    _fields(format.columnCount(), nullptr), 
-    _count(0)
+    _fields(format.columnCount(), nullptr) 
 {
 }
 
 
 Row::Row(Row&& other): 
     _format(other._format),
-    _fields(std::move(other._fields)),
-    _count(other._count)
+    _fields(std::move(other._fields))
 {
 }
 
 
-void Row::appendField(types::Data* data)
+void Row::setField(size16 index, types::Data* data)
 {
     // Najpierw sprawdzamy rozmiar
-    if (_count < _format.columnCount())
+    if (index < _format.columnCount())
     {
         // Potem typ
-        const Column& col = _format.columns()[_count];
+        const Column& col = _format.columns()[index];
         if (data->type() != col.type)
         {
             throw std::logic_error(util::format("Types don't match; "
@@ -48,12 +46,12 @@ void Row::appendField(types::Data* data)
                 static_cast<int>(col.type)));
         }
         // Zapisujemy w wektorze
-        _fields[_count ++] = DataPtr(data);
+        _fields[index] = DataPtr(data);
     }
     else
         throw std::logic_error(util::format("Too many fields; row has "
-            "{} columns", _format.columnCount()));
-} 
+            "{} columns", _format.columnCount()));    
+}
 
 
 const RowFormat& Row::format() const
@@ -142,7 +140,7 @@ column_number Row::getColumnNumber(const string& name) const
 
 // Implementacja identyczna jak w RowFormatterze
 
-Row::DataPtr Row::operator [] (const string& name)
+Row::FieldProxy Row::operator [] (const string& name)
 {
     column_number col = getColumnNumber(name);
     if (col != NULL_COLUMN)
@@ -164,9 +162,9 @@ Row::ConstDataPtr Row::operator [] (const string& name) const
 }
 
 
-Row::DataPtr Row::operator [] (column_number col)
+Row::FieldProxy Row::operator [] (column_number col)
 {
-    return _fields[col];
+    return { *this, col };//_fields[col];
 }
 
 

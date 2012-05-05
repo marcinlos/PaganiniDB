@@ -5,47 +5,100 @@
 #include <paganini/row/datatypes.h>
 #include <paganini/row/RowFormat.h>
 #include <paganini/row/Row.h>
-#include <paganini/row/FieldFactory.h>
+#include <paganini/row/FieldMetadata.h>
 #include <cstdio>
+#include <iostream>
 using namespace paganini;
+
+
+void database_creation()
+{
+    PageManager& manager = PageManager::getInstance();
+    manager.createFile("db");
+    manager.openFile("db");
+    page_number pn = manager.allocPage();
+    manager.closeFile();
+}
+
+void row_format_test()
+{
+    RowFormat fmt = 
+    { 
+        {types::FieldType::Int, "count"}, 
+        {types::FieldType::Float, "variance"},
+        {types::FieldType::Char, "Name", 0, 14},
+        {types::FieldType::VarChar, "Surname"},
+        {types::FieldType::VarChar, "Description"}
+    };
+    std::cout << "Po nazwie: Name ma rozmiar " << fmt["Name"].size << std::endl;
+    std::cout << "Wszystkie kolumny:" << std::endl;
+    for (const Column& c: fmt)
+    {
+        std::cout << "- " << c.name << "(" << c.size << ")" << std::endl;
+    }
+    std::cout << "Pola o zmiennym rozmiarze:" << std::endl;
+    auto view = fmt.variable();
+    for (auto it = view.begin(); it != view.end(); ++ it)
+    {
+        std::cout << "- " << (*it).name << std::endl;
+    }
+    std::cout << "Pola o stalym rozmiarze (random access):" << std::endl;
+    auto view2 = fmt.fixed();
+    for (int i = 0; i < fmt.fixedColumnCount(); ++ i)
+    {
+        std::cout << "- " << view2[i].name << std::endl;
+    }
+    std::cout << "Laczna dlugosc tych o stalym rozmiarze: "
+        << fmt.totalFixedSize() << std::endl;
+}
+
+void row_test()
+{
+    RowFormat fmt = 
+    { 
+        {types::FieldType::Int, "count"}, 
+        {types::FieldType::Float, "variance"},
+        {types::FieldType::Char, "Name", 0, 14},
+        {types::FieldType::VarChar, "Surname"},
+        {types::FieldType::VarChar, "Description"}
+    };
+    
+    Row row(fmt, { 
+        new types::Int(432), 
+        new types::Float(1.23),
+        new types::Char(14, "Aram"), 
+        new types::VarChar("Khachaturian"),
+        new types::VarChar("Kompozytor radziecki")
+    });
+    
+    std::cout << "Wartosci:" << std::endl;
+    for (std::shared_ptr<types::Data> p: row)
+    {
+        std::cout << p->toString() << std::endl;
+    }
+    /*
+    std::unique_ptr<types::Data> ddata = 
+        FieldMetadata::getInstance().create(types::FieldType::Float);
+    printf("float = %s\n", ddata->toString().c_str());
+    */
+    std::cout << "Pole 'Name': " << row["Name"]->toString() << std::endl;
+    row["Surname"] = new types::VarChar("Blabla");
+    std::cout << "Wartosci:" << std::endl;
+    for (std::shared_ptr<types::Data> p: row)
+    {
+        std::cout << p->toString() << std::endl;
+    }
+}
 
 
 int main()
 {
     try
-    {
-        PageManager& manager = PageManager::getInstance();
-        manager.createFile("dupa");
-        manager.openFile("dupa");
-        printf("%u, %u\n", DATA_SIZE, DATA_OFFSET);
-        /*
-        for (int i = 0; i < 10; ++ i)
-        {
-            manager.allocPage();
-        }
-        */
-        page_number pn = manager.allocPage();
-        Page page;
-        manager.readPage(pn, &page);
-        page_data data = page.data;
-     
-        RowFormat fmt = 
-        { 
-            {types::FieldType::Int, "Dupa"}, 
-            {types::FieldType::Float, "Sranie"},
-            {types::FieldType::VarChar, "Jebaka"},
-            {types::FieldType::VarChar, "madafaka"}
-        };
-        //fmt.print();
-        fmt["Dupa"];
-        for (const Column& c: fmt.fixed())
-        {
-            printf("%s\n", c.name.c_str());
-        }
-        auto it = fmt.variable().begin();
-        printf("%s\n%s\n", it->name.c_str(), (*it).name.c_str());
-        printf("%s\n", fmt.fixed()[1].name.c_str());
-        
+    {     
+        database_creation();
+        row_format_test();
+        row_test();
+        /*        
         Row row(fmt, { new types::Int(432), new types::Float(1.23),
             new types::VarChar("Spadaj"), new types::VarChar("Cieciu") });
             
@@ -70,7 +123,8 @@ int main()
         printf("%d\n", jj.val);
         manager.writePage(pn, &page);
         
-        manager.closeFile();
+        manager.closeFile();*/
+        
     }
     catch (paganini::Exception& e)
     {
