@@ -55,14 +55,17 @@ static const size32 PAGES_PER_UV = 8;
 
 // Typedefy do surowych danych
 typedef uint8_t* page_data;
+typedef const uint8_t* const_page_data;
 
 
 // Klasa strony - niewiele ponad bufor. Udostepnia sekcje naglowka i danych, 
 // jak rowniez metody pomocnicze get() i create().
 struct Page
 {
-    PageHeader header;
-    uint8_t data[DATA_SIZE];
+    PageHeader& header;
+    //uint8_t data[DATA_SIZE];
+    page_data data;
+    uint8_t buffer[PAGE_SIZE];
     
     // Konstruktor uzupelniajacy podstawowe informacje naglowka strony
     explicit Page(page_number number = NULL_PAGE, 
@@ -70,6 +73,36 @@ struct Page
     
     // Wypelnia sekcje danych zerami
     void clearData();
+    
+    PageHeader& getHeader()
+    {
+        return header;
+    }
+    
+    const PageHeader& getHeader() const
+    {
+        return header;
+    }
+    
+    page_data getData()
+    {
+        return data;
+    }
+    
+    const_page_data getData() const
+    {
+        return data;
+    }
+    
+    page_data getBuffer()
+    {
+        return buffer;
+    }
+    
+    const_page_data getBuffer() const
+    {
+        return buffer;
+    }
     
     // Pomocnicze do uzywania sekcji danych
     template <typename T>

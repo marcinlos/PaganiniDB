@@ -10,7 +10,7 @@
 
 using namespace paganini;
 
-extern PageManager manager;
+PageManager& manager = PageManager::getInstance();
 
 // Wypisywanie naglowka strony
 
@@ -51,28 +51,28 @@ static char* _str_flags(char* buffer, page_flags flags)
     return buffer;
 }
 
-static void _print_page_header(const PageHeader* header)
+static void _print_page_header(const PageHeader& header)
 {
     char buffer[64];
     const char* fmt = "%-15s %13s\n";
     
-    _str_page_number(buffer, header->number);
+    _str_page_number(buffer, header.number);
     printf(fmt, "Page number", buffer);
-    printf(fmt, "type", _str_page_type(header->flags));
+    printf(fmt, "type", _str_page_type(header.flags));
     
-    _str_page_number(buffer, header->prev);
+    _str_page_number(buffer, header.prev);
     printf(fmt, "prev", buffer);
     
-    _str_page_number(buffer, header->next);
+    _str_page_number(buffer, header.next);
     printf(fmt, "next", buffer);
     
-    _str_object_id(buffer, header->owner);
+    _str_object_id(buffer, header.owner);
     printf(fmt, "owner", buffer);
     
-    printf("%-15s %13hd\n", "rows", header->rows);
-    printf("%-15s %13hu\n", "free space", header->free_space);
-    printf("%-15s %13hd\n", "free offset", header->free_offset);
-    _str_flags(buffer, header->flags);
+    printf("%-15s %13hd\n", "rows", header.rows);
+    printf("%-15s %13hu\n", "free space", header.free_space);
+    printf("%-15s %13hd\n", "free offset", header.free_offset);
+    _str_flags(buffer, header.flags);
     printf(fmt, "flags", buffer);
     printf("\n");
 }
@@ -99,7 +99,7 @@ void print_page_header(const vector<string>& args)
         error_usr("Nie udalo sie odczytac strony %d", page_number);
         return;
     }
-    _print_page_header(&page.header);    
+    _print_page_header(page.getHeader());    
 }
 
 // Wypisywanie naglowka bazy danych

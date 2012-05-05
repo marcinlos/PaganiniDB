@@ -5,16 +5,16 @@
 #include <paganini/row/datatypes.h>
 #include <paganini/row/RowFormat.h>
 #include <paganini/row/Row.h>
+#include <paganini/row/FieldFactory.h>
 #include <cstdio>
 using namespace paganini;
 
 
 int main()
 {
-    printf("Size: %d\n", sizeof(Page));
     try
     {
-        PageManager manager;
+        PageManager& manager = PageManager::getInstance();
         manager.createFile("dupa");
         manager.openFile("dupa");
         printf("%u, %u\n", DATA_SIZE, DATA_OFFSET);
@@ -53,8 +53,12 @@ int main()
         
         for (std::shared_ptr<types::Data> p: row)
         {
-            printf("%d\n", static_cast<int>(p->type()));
+            printf("val: %s\n", p->toString().c_str());
         }
+        
+        std::unique_ptr<types::Data> ddata = 
+            FieldFactory::getInstance().create(types::FieldType::Float);
+        printf("float = %s\n", ddata->toString().c_str());
         
         types::Int i(34567);
         i.writeTo(data);

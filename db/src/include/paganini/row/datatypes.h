@@ -10,8 +10,10 @@
 
 #include <paganini/paging/Page.h>
 #include <paganini/paging/types.h>
+#include <paganini/util/format.h>
 #include <string>
 #include <cstring>
+#include <iostream>
 using std::string;
 
 namespace paganini
@@ -73,6 +75,11 @@ namespace types
         
         // Zwraca mapowany typ pola
         virtual FieldType type() const = 0;
+        
+        // Do debugowania - wypisuje zawartosc w formacie human-readable
+        virtual string toString() const = 0;
+        
+        virtual ~Data() { }
     };
     
     
@@ -101,6 +108,11 @@ namespace types
         size16 fieldSize() const { return sizeof(val); }
         size16 size() const { return sizeof(val); }
         FieldType type() const { return V; }
+        
+        string toString() const 
+        { 
+            return util::format("{}", val); 
+        }
     };
     
     // Dla podstawowych typow numerycznych wystarczy
@@ -139,12 +151,18 @@ namespace types
         size16 fieldSize() const { return max_length; }
         size16 size() const { return max_length; }
         FieldType type() const { return FieldType::Char; }
+        
+        string toString() const { return val; }
     };
     
-    // Typ tekstowy bez ograniczenia dlugosci (w rozsadnych granicach :-)
+    // Typ tekstowy bez ograniczenia dlugosci
     struct VarChar: public Data
     {
         string val;
+        
+        VarChar()
+        {
+        }
         
         VarChar(const string& val): val(val)
         {
@@ -163,9 +181,24 @@ namespace types
         size16 fieldSize() const { return VARIABLE; }
         size16 size() const { return val.size(); }
         FieldType type() const { return FieldType::VarChar; }
+        
+        string toString() const { return val; }
     };
 };
 
+}
+
+// Fabryka potrzebuje hashowalnych typow
+namespace std
+{
+    template <>
+    struct hash<paganini::types::FieldType>
+    {
+        std::size_t operator () (paganini::types::FieldType type) const
+        {
+            return static_cast<std::size_t>(type);
+        }
+    };
 }
 
 #endif // __PAGANINI_ROW_DATATYPES_H__

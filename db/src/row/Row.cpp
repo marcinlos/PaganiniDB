@@ -26,6 +26,14 @@ Row::Row(const RowFormat& format):
 }
 
 
+Row::Row(Row&& other): 
+    _format(other._format),
+    _fields(std::move(other._fields)),
+    _count(other._count)
+{
+}
+
+
 void Row::appendField(types::Data* data)
 {
     // Najpierw sprawdzamy rozmiar
@@ -108,15 +116,21 @@ const std::vector<Row::DataPtr>& Row::columns() const
 
 Row::FieldPtrVector Row::fixed() const
 {
-    return FieldPtrVector(_format.fixedIndices().begin(),
-        _format.fixedIndices().end(), _fields.begin());
+    return {
+        _format.fixedIndices().begin(), 
+        _format.fixedIndices().end(), 
+        _fields.begin()
+    };
 }
 
 
 Row::FieldPtrVector Row::variable() const
 {
-    return FieldPtrVector(_format.variableIndices().begin(),
-        _format.variableIndices().end(), _fields.begin());
+    return {
+        _format.variableIndices().begin(),
+        _format.variableIndices().end(), 
+        _fields.begin()
+    };
 }
 
 

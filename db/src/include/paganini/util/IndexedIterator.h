@@ -67,7 +67,7 @@ public:
     // Arytmetyka
     IndexedIterator operator + (difference_type n) const
     {
-        return IndexedIterator(i + n, begin);
+        return {i + n, begin};
     }
     
     // Porownania

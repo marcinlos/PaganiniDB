@@ -6,6 +6,7 @@
 #define __PAGANINI_PAGING_PAGE_MANAGER_H__
 
 #include <paganini/paging/Page.h>
+#include <paganini/util/Singleton.h>
 
 
 namespace paganini
@@ -39,7 +40,7 @@ inline bool isUV(page_number page)
 
 // Manager stronnicowania, odpowiedzialny za tworzenie fizycznych plikow
 // bazy danych, jak rowniez zapis/odczyt stron.
-class PageManager
+class PageManager: public util::Singleton<PageManager>
 {
 private:
     const static int EMPTY_FD = -1;
@@ -54,8 +55,14 @@ private:
     int scanForFree(const Page* uv);
     void growFile(size32 page_count);
     page_number findFree();
+    
+    // Singleton
+    friend class util::Singleton<PageManager>;
+    PageManager();
 
 public:
+    //static PageManager& getInstance();
+
     // Tworzy nowy plik bazy danych - strone naglowka, i pierwsza strone UV.
     void createFile(const char* path);
 
@@ -74,11 +81,11 @@ public:
     bool deletePage(page_number number);
 
     // Wczytuje do podanego bufora strone o zadanym numerze. 
-    void readPage(page_number number, Page* buffer);
+    void readPage(page_number number, Page* page);
 
     // Zapisuje do strony o podanym numerze dane z bufora. W celu zachowania 
     // spojnosci danych, strona powinna istniec i byc zaznaczona jako uzyta.
-    void writePage(page_number number, const Page* buffer);
+    void writePage(page_number number, const Page* page);
 
 };
 

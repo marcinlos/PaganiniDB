@@ -40,6 +40,9 @@ public:
     // Inicjalizuje wiersz informacja o formacie, bez wartosci
     Row(const RowFormat& format);
     
+    // Move constructor
+    Row(Row&& other);
+    
     // Dodaje dane do wiersza
     void appendField(types::Data* data);   
     

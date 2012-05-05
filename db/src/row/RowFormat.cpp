@@ -97,7 +97,7 @@ const std::vector<Column>& RowFormat::columns() const
 
 RowFormat::ColumnVector RowFormat::fixed() const
 {
-    return ColumnVector(_fixed.begin(), _fixed.end(), _columns.begin());
+    return {_fixed.begin(), _fixed.end(), _columns.begin()};
 }
 
 
@@ -109,7 +109,7 @@ const std::vector<int>& RowFormat::fixedIndices() const
 
 RowFormat::ColumnVector RowFormat::variable() const
 {
-    return ColumnVector(_variable.begin(), _variable.end(), _columns.begin());
+    return {_variable.begin(), _variable.end(), _columns.begin()};
 }
 
 

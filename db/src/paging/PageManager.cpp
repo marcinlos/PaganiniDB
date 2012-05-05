@@ -18,6 +18,19 @@ using paganini::util::format;
 namespace paganini
 {
 
+
+PageManager::PageManager()
+{
+}
+
+
+/*PageManager& PageManager::getInstance()
+{
+    static PageManager manager;
+    return manager;
+}*/
+
+
 // Ustawia pozycje wskaznika pliku na strone o podanym numerze
 void PageManager::moveToPage(page_number page)
 {
@@ -57,13 +70,13 @@ page_number PageManager::createUVPage(page_number previous_uv)
     if (previous_uv != NULL_PAGE)
     {
         readPage(previous_uv, &page);
-        page.header.next = new_page;
+        page.getHeader().next = new_page;
         writePage(previous_uv, &page);
     }
     
     // Wypelniamy naglowek strony, typ = UV_PAGE
-    page.header.fill(new_page, PageType::UV);
-    page.header.prev = previous_uv;
+    page.getHeader().fill(new_page, PageType::UV);
+    page.getHeader().prev = previous_uv;
 
     page.clearData();
     
@@ -251,7 +264,7 @@ page_number PageManager::findFree()
         int num = scanForFree(&page);
         if (num != -1)
         {
-            page_number free = page.header.number + num + 1;
+            page_number free = page.getHeader().number + num + 1;
 
             // Sprawdzenie dla niepelnych stron UV
             if (free < count)
@@ -263,7 +276,7 @@ page_number PageManager::findFree()
             }
         }
         prev = uv;
-        uv = page.header.next;
+        uv = page.getHeader().next;
     }
     // Nie bylo wolnego, trzeba zaalokowac nowe strony
     growFile(GROWTH_RATE);
@@ -279,7 +292,7 @@ page_number PageManager::findFree()
     else
     {
         readPage(prev, &page);
-        return page.header.next + 1;
+        return page.getHeader().next + 1;
     }
 }
 
@@ -303,21 +316,21 @@ bool PageManager::deletePage(page_number number)
 }
 
 
-void PageManager::readPage(page_number number, Page* buffer)
+void PageManager::readPage(page_number number, Page* page)
 {
     moveToPage(number);
-    if (read(fd, buffer, PAGE_SIZE) < PAGE_SIZE)
+    if (read(fd, page->getBuffer(), PAGE_SIZE) < PAGE_SIZE)
     {
-        throw Exception(format("Trying to write page nr {}", number), 
+        throw Exception(format("Trying to read page nr {}", number), 
             Error::READ);
     }
 }
 
 
-void PageManager::writePage(page_number number, const Page* buffer)
+void PageManager::writePage(page_number number, const Page* page)
 {
     moveToPage(number);
-    if (write(fd, buffer, PAGE_SIZE) < PAGE_SIZE)
+    if (write(fd, page->getBuffer(), PAGE_SIZE) < PAGE_SIZE)
     {      
         throw Exception(format("Trying to write page nr {}", number), 
             Error::WRITE);

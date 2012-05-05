@@ -8,7 +8,6 @@
 using namespace paganini;
 
 CommandExecutor executor;
-PageManager manager;
 
 void input_loop()
 {
@@ -34,6 +33,7 @@ int main(int argc, char** argv)
         fatal_usr("Uzycie: insp nazwa_pliku");
     try
     {
+        PageManager& manager = PageManager::getInstance();
         manager.openFile(argv[1]);
         
         prepare();
