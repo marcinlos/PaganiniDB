@@ -99,7 +99,7 @@ void print_page_header(const vector<string>& args)
         error_usr("Nie udalo sie odczytac strony %d", page_number);
         return;
     }
-    _print_page_header(page.getHeader());    
+    _print_page_header(page.header());    
 }
 
 // Wypisywanie naglowka bazy danych
@@ -149,7 +149,7 @@ void _print_uv_content(const Page* page)
     {
         if (i % 8 == 0)
             putchar('\n');
-        _print_byte(page->data[i]);
+        _print_byte(page->data()[i]);
         putchar(' ');
     }
     putchar('\n');

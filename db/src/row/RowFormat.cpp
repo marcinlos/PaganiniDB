@@ -1,7 +1,7 @@
 #include "config.h"
 #include <paganini/row/RowFormat.h>
 #include <paganini/util/format.h>
-#include <paganini/row/FieldMetadata.h>
+#include <paganini/row/FieldFactory.h>
 #include <stdexcept>
 
 namespace paganini
@@ -15,7 +15,7 @@ Column::Column(types::FieldType type, string name,
 {
     if (size == 0)
     {
-        this->size = FieldMetadata::getInstance().getSize(type);
+        this->size = FieldFactory::getInstance()[type].size;
     }
 }
 
@@ -65,7 +65,7 @@ void RowFormat::addColumn(const Column& col)
         _fixed.push_back(c.col);
         _fixed_size += c.size;
     }   
-    names[c.name] = c.col;
+    _names[c.name] = c.col;
 }
 
 
@@ -137,8 +137,8 @@ const std::vector<int>& RowFormat::variableIndices() const
 
 column_number RowFormat::getColumnNumber(const string& name) const
 {
-    auto i = names.find(name);
-    return i != names.end() ? i->second : NULL_COLUMN;
+    auto i = _names.find(name);
+    return i != _names.end() ? i->second : NULL_COLUMN;
 }
 
 

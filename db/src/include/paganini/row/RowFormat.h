@@ -49,7 +49,7 @@ private:
     std::vector<Column> _columns;
     std::vector<int> _fixed;
     std::vector<int> _variable;
-    std::unordered_map<string, int> names;
+    std::unordered_map<string, int> _names;
     size16 _fixed_size;
     
 public:

@@ -1,5 +1,5 @@
 #include "config.h"
-#include <paganini/row/FieldMetadata.h>
+#include <paganini/row/FieldFactory.h>
 #include <paganini/util/format.h>
 #include <stdexcept>
 
@@ -8,7 +8,7 @@ namespace paganini
 {
 
 
-FieldMetadata::FieldMetadata()
+FieldFactory::FieldFactory()
 {    
     types[types::FieldType::Int] = Metadata
     {
@@ -82,7 +82,7 @@ FieldMetadata::FieldMetadata()
 }
 
 
-FieldMetadata::DataPtr FieldMetadata::create(types::FieldType type, 
+FieldFactory::DataPtr FieldFactory::create(types::FieldType type, 
     size16 size) const
 {
     auto i = types.find(type);
@@ -90,30 +90,37 @@ FieldMetadata::DataPtr FieldMetadata::create(types::FieldType type,
         throw std::logic_error(util::format("Missing creator for '{}'"
             "field type", static_cast<int>(type)));
             
-    return DataPtr(std::get<CREATOR>((i->second))(size));
+    return DataPtr(i->second.creator(size));
 }
 
 
-size16 FieldMetadata::getSize(types::FieldType type) const
+const FieldFactory::Metadata& 
+    FieldFactory::operator [](types::FieldType type) const
+{
+    return getMetadata(type);
+}
+
+const FieldFactory::Metadata& 
+    FieldFactory::getMetadata(types::FieldType type) const
 {
     auto i = types.find(type);
     if (i == types.end())
         throw std::logic_error(util::format("Missing entry for '{}'"
             "field type", static_cast<int>(type)));
             
-    return std::get<SIZE>(i->second);
+    return i->second;
 }
 
 
-FieldMetadata::Creator FieldMetadata::registerCreator(types::FieldType type, 
+FieldFactory::Creator FieldFactory::registerCreator(types::FieldType type, 
     Creator creator)
 {
     auto i = types.find(type);
     if (i != types.end())
     {
         Metadata& d = i->second;
-        Creator previous = std::get<0>(d);
-        std::get<CREATOR>(d) = creator;
+        Creator previous = d.creator;
+        d.creator = creator;
         return previous;
     }
     throw std::logic_error(util::format("Missing entry for '{}'"

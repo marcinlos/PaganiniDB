@@ -1,0 +1,1 @@
+find -type f -exec wc -l {} \; | awk 'BEGIN {c = 0} {c += $1} END{print c}'

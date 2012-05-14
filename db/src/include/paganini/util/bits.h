@@ -13,8 +13,14 @@ namespace paganini
 namespace util
 {
 
+// Zwraca najmniejsza ilosc bajtow zdolna pomiescic tyle bitow
+inline int min_bytes(int bit_count)
+{
+    return bit_count > 0 ? (bit_count - 1) / 8 + 1 : 0;
+}
+
 // Ustawia w data bit o podanym numerze
-inline void set_bit(uint8_t* data, int bit)
+inline void set_bit(raw_data data, int bit)
 {
     data += bit / 8;
     *data |= (1 << (bit % 8));
@@ -22,10 +28,18 @@ inline void set_bit(uint8_t* data, int bit)
 
 
 // Zeruje w data bit o podanym numerze
-inline void unset_bit(uint8_t* data, int bit)
+inline void unset_bit(raw_data data, int bit)
 {
     data += bit / 8;
     *data &= ~(1 << (bit % 8));
+}
+
+
+// Zwraca wartosc bitu o podanym numerze
+inline bool get_bit(raw_data data, int bit)
+{
+    data += bit / 8;
+    return ((*data) & (1 << (bit % 8))) != 0;
 }
 
 

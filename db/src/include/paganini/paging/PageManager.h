@@ -7,6 +7,8 @@
 
 #include <paganini/paging/Page.h>
 #include <paganini/util/Singleton.h>
+#include <string>
+using std::string;
 
 
 namespace paganini
@@ -44,17 +46,17 @@ class PageManager: public util::Singleton<PageManager>
 {
 private:
     const static int EMPTY_FD = -1;
-    int fd;
-    void moveToPage(page_number page);
-    void createHeader();
-    page_number createUVPage(page_number previous_uv);
-    static page_number findUV(page_number number);
-    page_number readUVOfPage(page_number number, Page* page);
-    bool markAsUsed(page_number number);
-    bool markAsFree(page_number number);
-    int scanForFree(const Page* uv);
-    void growFile(size32 page_count);
-    page_number findFree();
+    int fd_;
+    void moveToPage_(page_number page);
+    void createHeader_();
+    page_number createUVPage_(page_number previous_uv);
+    static page_number findUV_(page_number number);
+    page_number readUVOfPage_(page_number number, Page* page);
+    bool markAsUsed_(page_number number);
+    bool markAsFree_(page_number number);
+    int scanForFree_(const Page* uv);
+    void growFile_(size32 page_count);
+    page_number findFree_();
     
     // Singleton
     friend class util::Singleton<PageManager>;
@@ -64,10 +66,10 @@ public:
     //static PageManager& getInstance();
 
     // Tworzy nowy plik bazy danych - strone naglowka, i pierwsza strone UV.
-    void createFile(const char* path);
+    void createFile(const string& path);
 
     // Inicjalizuje managera stronnicowania przy uzyciu istniejacego pliku
-    void openFile(const char* path);
+    void openFile(const string& path);
 
     // Konczy dzialanie managera stronnicowania
     void closeFile();

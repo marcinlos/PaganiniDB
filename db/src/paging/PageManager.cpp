@@ -24,17 +24,10 @@ PageManager::PageManager()
 }
 
 
-/*PageManager& PageManager::getInstance()
-{
-    static PageManager manager;
-    return manager;
-}*/
-
-
 // Ustawia pozycje wskaznika pliku na strone o podanym numerze
-void PageManager::moveToPage(page_number page)
+void PageManager::moveToPage_(page_number page)
 {
-    if (lseek(fd, page * PAGE_SIZE, SEEK_SET) < 0)
+    if (lseek(fd_, page * PAGE_SIZE, SEEK_SET) < 0)
     {
         throw Exception(Error::SEEK);
     }
@@ -42,7 +35,7 @@ void PageManager::moveToPage(page_number page)
 
 
 // Wypelnia naglowek pliku bazy danych (ilosc stron i czas)
-void PageManager::createHeader()
+void PageManager::createHeader_()
 {
     Page page(0, PageType::HEADER);
 
@@ -55,7 +48,7 @@ void PageManager::createHeader()
 
 
 // Tworzy nowa strone UV, nastepna w stosunku do podanej.
-page_number PageManager::createUVPage(page_number previous_uv)
+page_number PageManager::createUVPage_(page_number previous_uv)
 {
     // Obliczamy pozycje nowej strony UV - pierwsza jest szczegolnym przypadkiem
     page_number new_page;
@@ -70,13 +63,13 @@ page_number PageManager::createUVPage(page_number previous_uv)
     if (previous_uv != NULL_PAGE)
     {
         readPage(previous_uv, &page);
-        page.getHeader().next = new_page;
+        page.header().next = new_page;
         writePage(previous_uv, &page);
     }
     
     // Wypelniamy naglowek strony, typ = UV_PAGE
-    page.getHeader().fill(new_page, PageType::UV);
-    page.getHeader().prev = previous_uv;
+    page.header().fill(new_page, PageType::UV);
+    page.header().prev = previous_uv;
 
     page.clearData();
     
@@ -85,29 +78,29 @@ page_number PageManager::createUVPage(page_number previous_uv)
 }
 
 
-void PageManager::createFile(const char* path)
+void PageManager::createFile(const string& path)
 {
     // Tworzymy nowy plik dostepny dla uzytkownika
-    if ((fd = open(path, O_CREAT | O_RDWR, S_IWUSR | S_IRUSR)) < 0)
+    if ((fd_ = open(path.c_str(), O_CREAT | O_RDWR, S_IWUSR | S_IRUSR)) < 0)
     {
         throw Exception(format("Trying to create file '{}'", path), 
             Error::FILECREATE);
     }
     // Alokujemy miejsce na pierwsze bloki
-    moveToPage(FIRST_ALLOC);
+    moveToPage_(FIRST_ALLOC);
     
     // Tworzymy naglowek i pierwsza strone UV
-    createHeader();
-    createUVPage(NULL_PAGE);
+    createHeader_();
+    createUVPage_(NULL_PAGE);
     
     // Zamykamy plik - tu tylko tworzymy
     closeFile();
 }
 
 
-void PageManager::openFile(const char* path)
+void PageManager::openFile(const string& path)
 {
-    if ((fd = open(path, O_RDWR)) < 0)
+    if ((fd_ = open(path.c_str(), O_RDWR)) < 0)
     {
         throw Exception(format("Trying to open file '{}'", path), 
             Error::FILEOPEN);
@@ -117,15 +110,15 @@ void PageManager::openFile(const char* path)
 
 void PageManager::closeFile()
 {
-    close(fd);
-    fd = EMPTY_FD;
+    close(fd_);
+    fd_ = EMPTY_FD;
 }
 
 
 // Zwraca numer strony UV zawierajacej informacje o uzytkowaniu strony o
 // podanym numerze. Zwraca UV w dwoch przypadkach: gdy podana zostaje strona
 // UV, lub naglowek pliku.
-page_number PageManager::findUV(page_number number)
+page_number PageManager::findUV_(page_number number)
 {
     page_number diff = (number - 1) % (PAGES_PER_UV + 1);
     
@@ -140,9 +133,9 @@ page_number PageManager::findUV(page_number number)
 // Wczytuje do bufora strone UV zawierajaca informacje o stronie podanej jako 
 // pierwszy argument. Zwraca numer strony UV, lub NULL_PAGE w przypadku,
 // gdy strona nie posiada odpowiadajacej strony UV.
-page_number PageManager::readUVOfPage(page_number number, Page* page)
+page_number PageManager::readUVOfPage_(page_number number, Page* page)
 {
-    page_number uv = findUV(number);
+    page_number uv = findUV_(number);
     if (uv != NULL_PAGE)
     {
         readPage(uv, page);
@@ -153,17 +146,17 @@ page_number PageManager::readUVOfPage(page_number number, Page* page)
 
 // Zapisuje w strukturach wewnetrznych (strona UV) informacje, ze podana strona
 // jest uzywana.
-bool PageManager::markAsUsed(page_number number)
+bool PageManager::markAsUsed_(page_number number)
 {
     // Wczytujemy odpowiednia strone UV
     Page page;
     page_number uv;
-    if ((uv = readUVOfPage(number, &page)) == NULL_PAGE)
+    if ((uv = readUVOfPage_(number, &page)) == NULL_PAGE)
         return false;
         
     // Numer bitu to pozycja wzgledem strony UV
     int bit = number - (uv + 1);
-    util::set_bit(page.data, bit);
+    util::set_bit(page.data(), bit);
     
     writePage(uv, &page);
     return true;
@@ -172,15 +165,15 @@ bool PageManager::markAsUsed(page_number number)
 
 // Zapisuje w strukturach wewnetrznych informacje, ze podana strona jest wolna.
 // Implementacja analogiczna do markAsUsed().
-bool PageManager::markAsFree(page_number number)
+bool PageManager::markAsFree_(page_number number)
 {
     Page page;
     page_number uv;
-    if ((uv = readUVOfPage(number, &page)) == NULL_PAGE)
+    if ((uv = readUVOfPage_(number, &page)) == NULL_PAGE)
         return false;
  
     int bit = number - (uv + 1);
-    util::unset_bit(page.data, bit);
+    util::unset_bit(page.data(), bit);
  
     writePage(uv, &page);
     return true;
@@ -190,13 +183,13 @@ bool PageManager::markAsFree(page_number number)
 // W sekcji danych strony przechowywanej w podanym buforze szuka pierwszego
 // zerowego bitu (nieuzywany blok). Zwraca jego pozycje, badz -1 gdy takowego 
 // nie ma.
-int PageManager::scanForFree(const Page* uv)
+int PageManager::scanForFree_(const Page* uv)
 {
     // Po bajtach... mozna by optymalniej, ale... oj tam
     for (int i = 0; i < PAGES_PER_UV / 8; ++ i)
     {
         // Napisalem funkcje do znajdowania NIEzerowego bitu...
-        unsigned char b = ~uv->data[i];
+        unsigned char b = ~uv->data()[i];
         if (b != 0)  
         {
             return i * 8 + util::first_nonzero_bit(b);
@@ -207,7 +200,7 @@ int PageManager::scanForFree(const Page* uv)
 
 
 // Zwieksza plik o page_count stron ogolnego uzytku (+ strony UV).
-void PageManager::growFile(size32 page_count)
+void PageManager::growFile_(size32 page_count)
 {
     // Wczytujemy z naglowka bazy danych informacje o ilosci wszystkich stron.
     // Moze daloby sie tego uniknac?
@@ -232,19 +225,19 @@ void PageManager::growFile(size32 page_count)
 
     // Fizycznie zwiekszamy plik i uaktualniamy naglowek    
     header->page_count += total;
-    moveToPage(header->page_count);  
+    moveToPage_(header->page_count);  
     writePage(HEADER_PAGE_NUMBER, &page);
     
     // Tworzymy w razie potrzeby nowe UV-strony
     for (int i = 0; i < new_uv_count; ++ i)
     {
-        last_uv = createUVPage(last_uv);
+        last_uv = createUVPage_(last_uv);
     }   
 }
 
 
 // Znajduje wolna strone. Jesli jej nie ma, zwieksza plik. Zwraca jej numer.
-page_number PageManager::findFree()
+page_number PageManager::findFree_()
 {
     // Pobieramy ilosc stron
     Page page;
@@ -261,10 +254,10 @@ page_number PageManager::findFree()
     while (uv != NULL_PAGE)
     {
         readPage(uv, &page);
-        int num = scanForFree(&page);
+        int num = scanForFree_(&page);
         if (num != -1)
         {
-            page_number free = page.getHeader().number + num + 1;
+            page_number free = page.header().number + num + 1;
 
             // Sprawdzenie dla niepelnych stron UV
             if (free < count)
@@ -276,10 +269,10 @@ page_number PageManager::findFree()
             }
         }
         prev = uv;
-        uv = page.getHeader().next;
+        uv = page.header().next;
     }
     // Nie bylo wolnego, trzeba zaalokowac nowe strony
-    growFile(GROWTH_RATE);
+    growFile_(GROWTH_RATE);
 
     // Jesli zbior stron opisywany przez ostatnia strone UV nie byl pelny,
     // to znaleziona wowczas wolna strona teraz jest juz poprawna.
@@ -292,17 +285,17 @@ page_number PageManager::findFree()
     else
     {
         readPage(prev, &page);
-        return page.getHeader().next + 1;
+        return page.header().next + 1;
     }
 }
 
 
 page_number PageManager::allocPage()
 {
-    page_number free = findFree();
+    page_number free = findFree_();
 
     // Wypelniamy obowiazki administracyjne
-    markAsUsed(free);
+    markAsUsed_(free);
     Page page(free);
  
     writePage(free, &page);
@@ -312,14 +305,14 @@ page_number PageManager::allocPage()
 
 bool PageManager::deletePage(page_number number)
 {
-    return markAsFree(number);
+    return markAsFree_(number);
 }
 
 
 void PageManager::readPage(page_number number, Page* page)
 {
-    moveToPage(number);
-    if (read(fd, page->getBuffer(), PAGE_SIZE) < PAGE_SIZE)
+    moveToPage_(number);
+    if (read(fd_, page->buffer(), PAGE_SIZE) < PAGE_SIZE)
     {
         throw Exception(format("Trying to read page nr {}", number), 
             Error::READ);
@@ -329,8 +322,8 @@ void PageManager::readPage(page_number number, Page* page)
 
 void PageManager::writePage(page_number number, const Page* page)
 {
-    moveToPage(number);
-    if (write(fd, page->getBuffer(), PAGE_SIZE) < PAGE_SIZE)
+    moveToPage_(number);
+    if (write(fd_, page->buffer(), PAGE_SIZE) < PAGE_SIZE)
     {      
         throw Exception(format("Trying to write page nr {}", number), 
             Error::WRITE);

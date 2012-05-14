@@ -5,11 +5,34 @@
 #include <paganini/row/datatypes.h>
 #include <paganini/row/RowFormat.h>
 #include <paganini/row/Row.h>
-#include <paganini/row/FieldMetadata.h>
+#include <paganini/row/RowWriter.h>
+#include <paganini/row/FieldFactory.h>
 #include <cstdio>
 #include <iostream>
+#include <sstream>
 using namespace paganini;
 
+inline char hex_digit(int i)
+{
+    return i < 10 ? i + '0' : i - 10 + 'A';
+}
+
+string format_bytes(raw_data data, size16 len, size16 in_line = 16)
+{
+    std::ostringstream ss;
+    for (int i = 0; i < len; ++ i)
+    {
+        unsigned char c = static_cast<unsigned char>(data[i]);
+        ss << hex_digit(c / 16);
+        ss << hex_digit(c % 16);
+        ss << ' ';
+        if ((i + 1) % in_line == 0)
+            ss << std::endl; 
+        else if ((i + 1) % 2 == 0)
+            ss << ' ';
+    }
+    return ss.str();
+}
 
 void database_creation()
 {
@@ -72,7 +95,7 @@ void row_test()
     });
     
     std::cout << "Wartosci:" << std::endl;
-    for (std::shared_ptr<types::Data> p: row)
+    for (auto p: row.variable())
     {
         std::cout << p->toString() << std::endl;
     }
@@ -88,6 +111,13 @@ void row_test()
     {
         std::cout << p->toString() << std::endl;
     }
+    
+    std::cout << "Test zapisywania w pamieci" << std::endl;
+    // row["Name"] = nullptr;
+    char buffer[PAGE_SIZE];
+    RowWriter rw;
+    rw.write(buffer, row);
+    std::cout << format_bytes(buffer, 300) << std::endl;
 }
 
 

@@ -8,14 +8,14 @@ namespace paganini
 {
 
 Page::Page(page_number number, PageType type):
-    header(*(new (buffer) PageHeader(number, type))),
-    data(buffer + HEADER_SIZE)
+    header_(*(new (buffer_) PageHeader(number, type))),
+    data_(buffer_ + HEADER_SIZE)
 {
 }
 
 void Page::clearData()
 {
-    memset(data, 0, DATA_SIZE);
+    memset(data_, 0, DATA_SIZE);
 }
 
 }

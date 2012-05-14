@@ -34,13 +34,13 @@ struct PageHeader
     object_id owner;
     
     // Ilosc wierszy przechowywanych na stronie
-    row_count rows;
+    size16 rows;
     
     // Ilosc wolnego miejsca na stronie
     size16 free_space;
     
     // Poczatek wolnego miejsca na stronie
-    row_offset free_offset;
+    page_offset free_offset;
     
     // Flagi strony (BITS_PER_PAGE_TYPE najmlodszych bitow to typ strony)
     page_flags flags;

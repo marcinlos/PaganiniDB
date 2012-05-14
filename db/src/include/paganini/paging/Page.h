@@ -41,10 +41,10 @@ static const int PAGE_SIZE = (1 << PAGE_LOG_SIZE);
 
 // Offset Row Offset Array (ROA) - jest na koncu strony, indeksy ida
 // od tylu (i-ty indeks => page_addr + ROA - i * sizeof(pdbRowOffset)
-static const row_offset ROA_OFFSET = PAGE_SIZE - sizeof(row_offset);
+static const page_offset ROA_OFFSET = PAGE_SIZE - sizeof(page_offset);
 
 // Offset poczatku danych wierszy wzgledem poczatku strony
-static const row_offset DATA_OFFSET = HEADER_SIZE;
+static const page_offset DATA_OFFSET = HEADER_SIZE;
 
 // Wielkosc sekcji danych (wiersze + ROA) na stronie
 static const size16 DATA_SIZE = PAGE_SIZE - DATA_OFFSET;
@@ -53,20 +53,16 @@ static const size16 DATA_SIZE = PAGE_SIZE - DATA_OFFSET;
 static const size32 PAGES_PER_UV = 8;
 
 
-// Typedefy do surowych danych
-typedef uint8_t* page_data;
-typedef const uint8_t* const_page_data;
-
-
 // Klasa strony - niewiele ponad bufor. Udostepnia sekcje naglowka i danych, 
 // jak rowniez metody pomocnicze get() i create().
-struct Page
+class Page
 {
-    PageHeader& header;
-    //uint8_t data[DATA_SIZE];
-    page_data data;
-    uint8_t buffer[PAGE_SIZE];
+private:
+    PageHeader& header_;
+    raw_data data_;
+    char buffer_[PAGE_SIZE];
     
+public:
     // Konstruktor uzupelniajacy podstawowe informacje naglowka strony
     explicit Page(page_number number = NULL_PAGE, 
         PageType type = PageType::UNUSED);
@@ -74,54 +70,54 @@ struct Page
     // Wypelnia sekcje danych zerami
     void clearData();
     
-    PageHeader& getHeader()
+    PageHeader& header()
     {
-        return header;
+        return header_;
     }
     
-    const PageHeader& getHeader() const
+    const PageHeader& header() const
     {
-        return header;
+        return header_;
     }
     
-    page_data getData()
+    raw_data data()
     {
-        return data;
+        return data_;
     }
     
-    const_page_data getData() const
+    const_raw_data data() const
     {
-        return data;
+        return data_;
     }
     
-    page_data getBuffer()
+    raw_data buffer()
     {
-        return buffer;
+        return buffer_;
     }
     
-    const_page_data getBuffer() const
+    const_raw_data buffer() const
     {
-        return buffer;
+        return buffer_;
     }
     
     // Pomocnicze do uzywania sekcji danych
     template <typename T>
     T* get()
     {
-        return reinterpret_cast<T*>(data);
+        return reinterpret_cast<T*>(data_);
     }
 
     template <typename T>
     const T* get() const
     {
-        return reinterpret_cast<const T*>(data);
+        return reinterpret_cast<const T*>(data_);
     }
     
     // Umozliwia konstrukcje obiektu w sekcji danych
     template <typename T, typename... Args>
     T* create(Args&&... args)
     {
-        return new (data) T(std::forward<Args>(args)...);
+        return new (data_) T(std::forward<Args>(args)...);
     }
 };
 

@@ -8,9 +8,13 @@ namespace paganini
 {
 
 // Wektor inicjalizujemy nullptr-ami, alokujemy od razu na calosc
-Row::Row(const RowFormat& format, std::initializer_list<types::Data*> fields):
+Row::Row(const RowFormat& format, 
+    std::initializer_list<types::Data*> fields,
+    row_flags flags):
+    
     _format(format), 
-    _fields(format.columnCount(), nullptr)
+    _fields(format.columnCount(), nullptr),
+    _flags(flags)
 {
     int i = 0;
     for (types::Data* data: fields)
@@ -18,9 +22,10 @@ Row::Row(const RowFormat& format, std::initializer_list<types::Data*> fields):
 }
 
 
-Row::Row(const RowFormat& format): 
+Row::Row(const RowFormat& format, row_flags flags): 
     _format(format), 
-    _fields(format.columnCount(), nullptr) 
+    _fields(format.columnCount(), nullptr),
+    _flags(flags)
 {
 }
 
@@ -57,6 +62,12 @@ void Row::setField(size16 index, types::Data* data)
 const RowFormat& Row::format() const
 {
     return _format;
+}
+
+
+row_flags Row::flags() const
+{
+    return _flags;
 }
 
 
@@ -138,6 +149,18 @@ column_number Row::getColumnNumber(const string& name) const
 }
 
 
+bool Row::isNull(const string& name) const
+{
+    return (*this)[name] == nullptr;
+}
+
+
+bool Row::isNull(column_number col) const
+{
+    return (*this)[col] == nullptr;
+}
+
+
 // Implementacja identyczna jak w RowFormatterze
 
 Row::FieldProxy Row::operator [] (const string& name)
@@ -164,7 +187,7 @@ Row::ConstDataPtr Row::operator [] (const string& name) const
 
 Row::FieldProxy Row::operator [] (column_number col)
 {
-    return { *this, col };//_fields[col];
+    return { *this, col };
 }
 
 

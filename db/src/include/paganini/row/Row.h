@@ -20,11 +20,13 @@ namespace paganini
 class Row
 {
 private:
-    const RowFormat& _format;
     typedef std::shared_ptr<types::Data> DataPtr;
     typedef std::shared_ptr<const types::Data> ConstDataPtr;
     typedef std::vector<DataPtr> container;
+    
+    const RowFormat& _format;   
     container _fields;
+    row_flags _flags;
 
 public:
     typedef util::IndexedView<std::vector<int>::const_iterator,
@@ -53,10 +55,11 @@ public:
     
 
     // Inicjalizuje wiersz wskaznikami do danych
-    Row(const RowFormat& format, std::initializer_list<types::Data*> fields);
+    Row(const RowFormat& format, std::initializer_list<types::Data*> fields,
+        row_flags flags = 0);
     
     // Inicjalizuje wiersz informacja o formacie, bez wartosci
-    Row(const RowFormat& format);
+    Row(const RowFormat& format, row_flags flags = 0);
     
     // Move constructor
     Row(Row&& other);
@@ -66,6 +69,9 @@ public:
     
     // Zwraca format wiersza
     const RowFormat& format() const;
+    
+    // Zwraca flagi wiersza
+    row_flags flags() const;
     
     // Aby typ byl iterowalny
     iterator begin();
@@ -94,6 +100,10 @@ public:
     // Zwraca numer kolumny o podanej nazwie, badz NULL_COLUMN, gdy 
     // kolumna o takiej nazwie nie istnieje.
     column_number getColumnNumber(const string& name) const;
+    
+    // Zwraca informacje, czy podane pole jest NULL-em
+    bool isNull(const string& name) const;
+    bool isNull(column_number col) const;
     
     // Zwraca wskaznik na dane z kolumny o podanej nazwie. 
     // Rzuca std::logic_error, jesli kolumna o takiej nazwie nie istnieje.
