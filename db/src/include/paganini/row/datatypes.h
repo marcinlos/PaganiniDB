@@ -10,6 +10,7 @@
 
 #include <paganini/paging/Page.h>
 #include <paganini/row/OutputBinaryStream.h>
+#include <paganini/row/InputBinaryStream.h>
 #include <paganini/paging/types.h>
 #include <paganini/util/format.h>
 #include <string>
@@ -36,7 +37,7 @@ static const int VARIABLE_MASK = 1 << 7;
 // Dostepne rodzaje pol... Troche to redundancji wprowadza, ale
 // nie widze mozliwosci statycznego unikniecia tego niestety.
 // Brzydka decyzja projektowa: osmy bit = 1 oznacza zmienny rozmiar.
-enum class FieldType
+enum class FieldDataType
 {
     None,
     Int,
@@ -47,6 +48,19 @@ enum class FieldType
     VarChar = VARIABLE_MASK
 };
 
+// Pelny opis typu danych - rodzaj + wie asdffasdflkosc (dla char).
+struct FieldType
+{
+    static const size16
+    FieldDataType type;
+    size16 size;
+    
+    FieldDefinition(FieldType type, size16 size = 0): 
+        type(type), size(size)
+    {
+    }
+};
+/*
 struct Data;
 
 // Dynamiczne informacje o typach
@@ -66,7 +80,7 @@ struct FieldMetadata
 // Statyczne informacje o typach
 template <FieldType type>
 struct FieldTypeTraits;
-
+*/
 
 // Funkcja sprawdzajaca, czy typ jest typem zmiennej dlugosci
 inline bool is_variable_size(FieldType type)
@@ -80,17 +94,19 @@ class Data
 {  
 public:
     // Zapisuje dane do bufora. Zwraca ilosc zapisanych bajtow
-    virtual size16 writeTo(OutputBinaryStream& buffer) const = 0;
+    virtual size16 writeTo(OutputBinaryStream& stream) const = 0;
     
-    // Wczytuje dane z podanego zakresu bufora.
-    virtual void readFrom(raw_data begin, size16 size) = 0;
-    
-    // Zwraca rozmiar typu danych - nie konkretnej instancji. 
-    // Zwraca VARIABLE, jesli wielkosc nie jest stala.
-    virtual size16 fieldSize() const = 0;
+    // Wczytuje dane z podanego strumienia. Drugi argument powinien miec
+    // znaczenie wylacznie dla typow zmiennej wielkosci.
+    virtual void readFrom(InputBinaryStream& stream, size16 size = 0) = 0;
     
     // Zwraca rozmiar tej konkretnej instancji typu danych.
     virtual size16 size() const = 0; 
+    
+    bool isVariableSize() const
+    {
+        return is_variable_size(type());
+    }
     
     // Zwraca mapowany typ pola
     virtual FieldType type() const = 0;
@@ -120,14 +136,15 @@ public:
         stream.write(val);
     }
     
-    void readFrom(raw_data begin, size16 size)
+    void readFrom(InputBinaryStream& stream, size16 size = 0)
     {
-        val = *(reinterpret_cast<const Value*>(begin));
+        // val = *(reinterpret_cast<const Value*>(begin));
+        stream.read(&val);
     }
-    
-    size16 fieldSize() const { return sizeof(val); }
+
     size16 size() const { return sizeof(val); }
-    FieldType type() const { return V; }
+    
+    FieldType type() const { return { V, sizeof(U) }; }
     
     string toString() const 
     { 
@@ -160,17 +177,17 @@ public:
     {
         memset(stream.getBuffer(), 0xAB, max_length);
         // stream.moveForward(max_length);
-        stream.write(&val[0], max_length);
+        stream.writeData(&val[0], max_length);
     }
     
-    void readFrom(raw_data begin, size16 size)
+    void readFrom(InputBinaryStream& stream, size16 size = 0)
     {
-        val.assign(begin, begin + size);
+        // val.assign(begin, begin + size);
+        stream.readData(&val[0], size);
     }
     
-    size16 fieldSize() const { return max_length; }
     size16 size() const { return max_length; }
-    FieldType type() const { return FieldType::Char; }
+    FieldType type() const { return { FieldType::Char, max_length }; }
     
     string toString() const { return string(val.begin(), val.end()); }
 };
@@ -190,22 +207,23 @@ public:
     
     size16 writeTo(OutputBinaryStream& stream) const
     {
-        stream.write(val.c_str(), val.length());
+        stream.writeData(val.c_str(), val.length());
     }
     
-    void readFrom(raw_data begin, size16 size)
+    void readFrom(InputBinaryStream& stream, size16 size = 0)
     {
-        val = string(begin, begin + size);
+        val.reserve(size);
+        stream.readRange(val.begin(), size);
+        //val = string(begin, begin + size);
     }
     
-    size16 fieldSize() const { return VARIABLE_SIZE; }
     size16 size() const { return val.size(); }
-    FieldType type() const { return FieldType::VarChar; }
+    FieldType type() const { return { FieldType::VarChar, VARIABLE_SIZE }; }
     
     string toString() const { return val; }
 };
 
-
+/*
 // Opis pol
 
 template <>
@@ -245,7 +263,7 @@ struct FieldTypeTraits<FieldType::VarChar>
 
 } // types
 } // paganini
-
+*/
 // Fabryka potrzebuje hashowalnych typow
 namespace std
 {

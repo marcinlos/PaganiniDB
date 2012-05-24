@@ -6,18 +6,15 @@
 #define __PAGANINI_ROW_OUTPUT_BINARY_STREAM_H__
 
 #include <paganini/paging/types.h>
+#include <paganini/row/BinaryStream.h>
 #include <cstring>
 
 namespace paganini
 {
 
 
-class OutputBinaryStream
-{
-private:
-    raw_data buffer;
-    page_offset offset;
-    
+class OutputBinaryStream: public BinaryStream
+{   
 public:
     OutputBinaryStream(raw_data buffer, size16 offset = 0);
     
@@ -34,7 +31,7 @@ public:
     }
     
     template <typename Iter>
-    static size16 write(raw_data buffer, Iter begin, Iter end)
+    static size16 writeRange(raw_data buffer, Iter begin, Iter end)
     {
         size16 sum = 0;
         while (begin != end)
@@ -42,7 +39,8 @@ public:
         return sum;
     }
     
-    static size16 write(raw_data buffer, const_raw_data data, size16 length);
+    static size16 writeData(raw_data buffer, const_raw_data data, 
+        size16 length);
     
     // Metody niestatyczne, realizuja swoje funkcje przy uzyciu powyzszych
     // statycznych
@@ -55,21 +53,15 @@ public:
     }
     
     template <typename Iter>
-    size16 write(Iter begin, Iter end)
+    size16 writeRange(Iter begin, Iter end)
     {
-        size16 length = OutputBinaryStream::write(buffer + offset, begin, end);
+        size16 length = OutputBinaryStream::writeRange(buffer + offset, 
+            begin, end);
         offset += length;
         return length;
     }
     
-    size16 write(const_raw_data data, size16 length);
-    
-    // Pozostale metody
-    page_offset getOffset() const;
-    
-    void skip(size16 offset);
-    
-    raw_data getBuffer();
+    size16 writeData(const_raw_data data, size16 length);
 };
 
 

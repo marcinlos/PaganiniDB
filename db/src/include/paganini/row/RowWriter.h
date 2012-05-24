@@ -58,21 +58,27 @@ public:
         stream.write(format.totalFixedSize());
         
         // Zapisujemy dane stalej dlugosci
-        for (auto field: row.fixed())
-            field->writeTo(stream);
+        for (auto i: format.fixedIndices())
+        {
+            if (row[i] != nullptr)
+                row[i]->writeTo(stream);
+            else 
+                stream.skip(format[i].size);
+        }
             
         stream.write(row.variableColumnCount());
         
         // Bitmapa nulli
         bitmap null_bitmap = createNullBitmap(row);
-        stream.write(null_bitmap.begin(), null_bitmap.end());
+        stream.writeRange(null_bitmap.begin(), null_bitmap.end());
 
         page_offset offset = stream.getOffset() 
             + row.variableColumnCount() * sizeof(page_offset);        
         for (auto field: row.variable())
         {
             stream.write(offset);
-            offset += field->size();
+            if (field != nullptr)
+                offset += field->size();
         }
             
         // Zapisuje same dane
