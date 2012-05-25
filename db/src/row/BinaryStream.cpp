@@ -16,8 +16,13 @@ page_offset BinaryStream::getOffset() const
     return offset;
 }
 
+void BinaryStream::setOffset(page_offset offset)
+{
+    this->offset = offset;
+}
 
-void BinaryStream::skip(size16 offset)
+
+void BinaryStream::skip(page_offset offset)
 {
     this->offset += offset;
 }

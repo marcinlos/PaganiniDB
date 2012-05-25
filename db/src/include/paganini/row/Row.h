@@ -11,6 +11,7 @@
 #include <paganini/row/RowFormat.h>
 #include <vector>
 #include <memory>
+#include <iostream>
 
 
 namespace paganini
@@ -39,7 +40,7 @@ public:
     class FieldProxy
     {
         Row& row;
-        const size16 index;
+        const int index;
         
     public:
         FieldProxy(Row& row, size16 index): row(row), index(index) { }
@@ -116,6 +117,17 @@ public:
     
     ConstDataPtr operator [] (column_number col) const;
 };
+
+
+inline std::ostream& operator << (std::ostream& os, const Row& row)
+{
+    for (const Column& column: row.format())
+    {
+        auto data = row[column.col];
+        os << column << ": " << (data ? data->toString() : "NULL") << std::endl;
+    }
+    return os;
+}
 
 
 }

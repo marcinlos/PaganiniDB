@@ -37,7 +37,7 @@ static const int VARIABLE_MASK = 1 << 7;
 // Dostepne rodzaje pol... Troche to redundancji wprowadza, ale
 // nie widze mozliwosci statycznego unikniecia tego niestety.
 // Brzydka decyzja projektowa: osmy bit = 1 oznacza zmienny rozmiar.
-enum class FieldDataType
+enum class ContentType
 {
     None,
     Int,
@@ -48,42 +48,58 @@ enum class FieldDataType
     VarChar = VARIABLE_MASK
 };
 
-// Pelny opis typu danych - rodzaj + wie asdffasdflkosc (dla char).
+inline std::ostream& operator << (std::ostream& os, ContentType content)
+{
+    const char* str;
+    switch (content)
+    {
+    case ContentType::None: str = "none"; break;
+    case ContentType::Int: str = "int"; break;
+    case ContentType::Float: str = "float"; break;
+    case ContentType::PageNumber: str = "page_number"; break;
+    case ContentType::Char: str = "char"; break;
+    case ContentType::VarChar: str = "varchar"; break;
+    default: "INVALID";
+    }
+    return os << str;
+}
+
+// Pelny opis typu danych - rodzaj + wielkosc (dla char).
 struct FieldType
 {
-    static const size16
-    FieldDataType type;
+    static const size16 NON_APPLICABLE = 0;
+    ContentType content;
     size16 size;
     
-    FieldDefinition(FieldType type, size16 size = 0): 
-        type(type), size(size)
+    FieldType(ContentType content, size16 size = NON_APPLICABLE): 
+        content(content), size(size)
     {
     }
 };
-/*
-struct Data;
 
-// Dynamiczne informacje o typach
-struct FieldMetadata
+// Operatory do FieldType
+inline bool operator == (const FieldType& first, const FieldType& second)
 {
-    typedef std::function<Data* (size16)> Creator;
-    
-    Creator creator;
-    size16 size;
-    
-    Data* operator () (size16 size = 0) const
-    {
-        return creator(size);
-    }
-};
+    return first.content == second.content && first.size == second.size;
+}
 
-// Statyczne informacje o typach
-template <FieldType type>
-struct FieldTypeTraits;
-*/
+inline bool operator != (const FieldType& first, const FieldType& second)
+{
+    return ! (first == second);
+}
+
+// Umozliwia wypisywanie FieldType w czytelnym formacie (do debugowania)
+inline std::ostream& operator << (std::ostream& os, const FieldType& type)
+{
+    os << type.content;
+    if (type.size != FieldType::NON_APPLICABLE)
+        os << "(" << type.size << ")";
+    return os;
+}
+
 
 // Funkcja sprawdzajaca, czy typ jest typem zmiennej dlugosci
-inline bool is_variable_size(FieldType type)
+inline bool is_variable_size(ContentType type)
 {
     return (static_cast<int>(type) & VARIABLE_MASK) != 0;
 }
@@ -93,7 +109,7 @@ inline bool is_variable_size(FieldType type)
 class Data
 {  
 public:
-    // Zapisuje dane do bufora. Zwraca ilosc zapisanych bajtow
+    // Zapisuje dane do bufora. Zwraca ilosc zapisanych bajtow.
     virtual size16 writeTo(OutputBinaryStream& stream) const = 0;
     
     // Wczytuje dane z podanego strumienia. Drugi argument powinien miec
@@ -103,9 +119,10 @@ public:
     // Zwraca rozmiar tej konkretnej instancji typu danych.
     virtual size16 size() const = 0; 
     
+    // Zwraca true, jesli mapowany typ jest zmiennej wielkosci.
     bool isVariableSize() const
     {
-        return is_variable_size(type());
+        return is_variable_size(type().content);
     }
     
     // Zwraca mapowany typ pola
@@ -118,8 +135,9 @@ public:
 };
 
 
+// Generyczna implementacja danej stalego rozmiaru. 
 // Powinno dzialac dla wszystkich POD-ow.
-template <typename U, FieldType V>
+template <typename U, ContentType V>
 class GenericWrapper: public Data
 {
 private:
@@ -138,13 +156,12 @@ public:
     
     void readFrom(InputBinaryStream& stream, size16 size = 0)
     {
-        // val = *(reinterpret_cast<const Value*>(begin));
         stream.read(&val);
     }
 
     size16 size() const { return sizeof(val); }
     
-    FieldType type() const { return { V, sizeof(U) }; }
+    FieldType type() const { return { V, FieldType::NON_APPLICABLE }; }
     
     string toString() const 
     { 
@@ -153,9 +170,9 @@ public:
 };
 
 // Dla podstawowych typow numerycznych wystarczy
-typedef GenericWrapper<int32_t, FieldType::Int> Int;
-typedef GenericWrapper<float, FieldType::Float> Float;
-typedef GenericWrapper<page_number, FieldType::PageNumber> PageNumber;
+typedef GenericWrapper<int32_t, ContentType::Int> Int;
+typedef GenericWrapper<float, ContentType::Float> Float;
+typedef GenericWrapper<page_number, ContentType::PageNumber> PageNumber;
 
 
 // Stringami musimy zajac sie inaczej.
@@ -167,27 +184,24 @@ private:
     size16 max_length;
     
 public:
-    explicit Char(size16 length, const string& val = ""): 
-        val(max_length), max_length(length)
+    explicit Char(size16 length, const string& value = ""): 
+        val(length), max_length(length)
     {
-        this->val.assign(val.begin(), val.end());
+        std::copy(value.begin(), value.end(), val.begin());
     }
     
     size16 writeTo(OutputBinaryStream& stream) const
     {
-        memset(stream.getBuffer(), 0xAB, max_length);
-        // stream.moveForward(max_length);
-        stream.writeData(&val[0], max_length);
+        stream.writeRange(val.begin(), val.end());
     }
     
     void readFrom(InputBinaryStream& stream, size16 size = 0)
     {
-        // val.assign(begin, begin + size);
-        stream.readData(&val[0], size);
+        stream.readRange(val.begin(), max_length);
     }
     
     size16 size() const { return max_length; }
-    FieldType type() const { return { FieldType::Char, max_length }; }
+    FieldType type() const { return { ContentType::Char, max_length }; }
     
     string toString() const { return string(val.begin(), val.end()); }
 };
@@ -207,72 +221,38 @@ public:
     
     size16 writeTo(OutputBinaryStream& stream) const
     {
-        stream.writeData(val.c_str(), val.length());
+        stream.writeRange(val.begin(), val.end());
     }
     
     void readFrom(InputBinaryStream& stream, size16 size = 0)
     {
-        val.reserve(size);
+        val.resize(size);
         stream.readRange(val.begin(), size);
-        //val = string(begin, begin + size);
     }
     
     size16 size() const { return val.size(); }
-    FieldType type() const { return { FieldType::VarChar, VARIABLE_SIZE }; }
+    
+    FieldType type() const 
+    { 
+        return { ContentType::VarChar, FieldType::NON_APPLICABLE }; 
+    }
     
     string toString() const { return val; }
 };
 
-/*
-// Opis pol
-
-template <>
-struct FieldTypeTraits<FieldType::Int>
-{
-    static const size16 size = 4;
-    typedef Int DefaultClass;   
-};
-
-template <>
-struct FieldTypeTraits<FieldType::PageNumber>
-{
-    static const size16 size = sizeof(page_number);
-    typedef PageNumber DefaultClass;   
-};
-
-template <>
-struct FieldTypeTraits<FieldType::Float>
-{
-    static const size16 size = sizeof(float);
-    typedef Float DefaultClass;
-};
-
-template <>
-struct FieldTypeTraits<FieldType::Char>
-{
-    static const size16 size = VARIABLE_SIZE;
-    typedef Char DefaultClass;
-};
-
-template <>
-struct FieldTypeTraits<FieldType::VarChar>
-{
-    static const size16 size = VARIABLE_SIZE;
-    typedef VarChar DefaultClass;
-};
 
 } // types
 } // paganini
-*/
+
 // Fabryka potrzebuje hashowalnych typow
 namespace std
 {
     template <>
-    struct hash<paganini::types::FieldType>
+    struct hash<paganini::types::ContentType>
     {
-        std::size_t operator () (paganini::types::FieldType type) const
+        std::size_t operator () (paganini::types::ContentType content) const
         {
-            return static_cast<std::size_t>(type);
+            return static_cast<std::size_t>(content);
         }
     };
 }

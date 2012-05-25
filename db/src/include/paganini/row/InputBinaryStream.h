@@ -9,6 +9,7 @@
 #include <paganini/row/BinaryStream.h>
 #include <cstring>
 #include <iterator>
+#include <iostream>
 
 namespace paganini
 {
@@ -25,8 +26,9 @@ public:
     {
         *output = T();
         for (int i = 0; i < sizeof(T); ++ i)
-            *output |= ((*buffer++) << i);
-
+        {
+            *output |= ((static_cast<T>(*buffer++) & 0xff) << (i * 8));
+        }
         return sizeof(T);
     }
     
@@ -35,7 +37,7 @@ public:
     {
         size16 sum = 0;
         for (int i = 0; i < count; ++ i)
-            sum += read(buffer + sum, &(*out ++));
+            sum += read(buffer + sum, &(*(out ++)));
         return sum;
     }
     

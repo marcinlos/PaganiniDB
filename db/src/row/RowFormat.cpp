@@ -8,42 +8,35 @@ namespace paganini
 {
 
 
-Column::Column(types::FieldType type, string name, 
-    column_flags flags, size16 size):
-    type(type), name(name), flags(flags), col(NULL_COLUMN),
-    size(size)
+Column::Column(types::FieldType type, string name, column_flags flags):
+    type(type), name(name), flags(flags), col(NULL_COLUMN)
 {
-    if (size == 0)
-    {
-        this->size = FieldFactory::getInstance()[type].size;
-    }
 }
 
 
-Column::Column(Column&& other)
+Column::Column(Column&& other): type(other.type)
 {
     name = std::move(other.name);
     col = other.col;
     flags = other.flags;
     type = other.type;
-    size = other.size;
 }
     
     
 Column::Column(const Column& other): name(other.name), col(other.col),
-    type(other.type), flags(other.flags), size(other.size)
+    type(other.type), flags(other.flags)
 {
 }
 
 
-RowFormat::RowFormat(const std::vector<Column>& cols): _fixed_size(0)
+RowFormat::RowFormat(const std::vector<Column>& cols)
 {
     for (const Column& c: cols)
         addColumn(c);
 }
 
 
-RowFormat::RowFormat(std::initializer_list<Column> cols): _fixed_size(0)
+RowFormat::RowFormat(std::initializer_list<Column> cols)
 {
     for (const Column& c: cols)
         addColumn(c);
@@ -58,13 +51,11 @@ void RowFormat::addColumn(const Column& col)
     c.col = _columns.size() - 1;
     
     // Uaktualniamy wektory pomocnicze
-    if (types::is_variable_size(c.type))
+    if (types::is_variable_size(c.type.content))
         _variable.push_back(c.col);
     else
-    {
         _fixed.push_back(c.col);
-        _fixed_size += c.size;
-    }   
+   
     _names[c.name] = c.col;
 }
 
@@ -90,12 +81,6 @@ size16 RowFormat::columnCount() const
 size16 RowFormat::fixedColumnCount() const
 {
     return _fixed.size();
-}
-
-
-size16 RowFormat::totalFixedSize() const
-{
-    return _fixed_size;
 }
     
 

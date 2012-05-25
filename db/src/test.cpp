@@ -6,6 +6,7 @@
 #include <paganini/row/RowFormat.h>
 #include <paganini/row/Row.h>
 #include <paganini/row/RowWriter.h>
+#include <paganini/row/RowReader.h>
 #include <paganini/row/FieldFactory.h>
 #include <cstdio>
 #include <iostream>
@@ -47,18 +48,18 @@ void row_format_test()
 {
     RowFormat fmt = 
     { 
-        {types::FieldType::Int, "count"}, 
-        {types::FieldType::Float, "variance"},
-        {types::FieldType::Char, "Name", 0, 14},
-        {types::FieldType::VarChar, "Surname"},
-        {types::FieldType::VarChar, "Description"}
+        {types::ContentType::Int, "count"}, 
+        {types::ContentType::Float, "variance"},
+        {{types::ContentType::Char, 14}, "Name"},
+        {types::ContentType::VarChar, "Surname"},
+        {types::ContentType::VarChar, "Description"}
     };
-    std::cout << "Po nazwie: Name ma rozmiar " << fmt["Name"].size << std::endl;
+    //std::cout << "Po nazwie: Name ma rozmiar " << fmt["Name"].size << std::endl;
     std::cout << "Wszystkie kolumny:" << std::endl;
-    for (const Column& c: fmt)
+    /*for (const Column& c: fmt)
     {
         std::cout << "- " << c.name << "(" << c.size << ")" << std::endl;
-    }
+    }*/
     std::cout << "Pola o zmiennym rozmiarze:" << std::endl;
     auto view = fmt.variable();
     for (auto it = view.begin(); it != view.end(); ++ it)
@@ -71,25 +72,25 @@ void row_format_test()
     {
         std::cout << "- " << view2[i].name << std::endl;
     }
-    std::cout << "Laczna dlugosc tych o stalym rozmiarze: "
-        << fmt.totalFixedSize() << std::endl;
+    //std::cout << "Laczna dlugosc tych o stalym rozmiarze: "
+    //    << fmt.totalFixedSize() << std::endl;
 }
 
 void row_test()
-{
+{    
     RowFormat fmt = 
     { 
-        {types::FieldType::Int, "count"}, 
-        {types::FieldType::Float, "variance"},
-        {types::FieldType::Char, "Name", 0, 14},
-        {types::FieldType::VarChar, "Surname"},
-        {types::FieldType::VarChar, "Description"}
+        {types::ContentType::Int, "count"}, 
+        {types::ContentType::Float, "variance"},
+        {{types::ContentType::Char, 14}, "Name"},
+        {types::ContentType::VarChar, "Surname"},
+        {types::ContentType::VarChar, "Description"}
     };
-    
+
     Row row(fmt, { 
         new types::Int(432), 
         new types::Float(1.23),
-        new types::Char(14, "Aram"), 
+        new types::Char(14, "Aram"),
         new types::VarChar("Khachaturian"),
         new types::VarChar("Kompozytor radziecki")
     });
@@ -104,6 +105,7 @@ void row_test()
         FieldMetadata::getInstance().create(types::FieldType::Float);
     printf("float = %s\n", ddata->toString().c_str());
     */
+    
     std::cout << "Pole 'Name': " << row["Name"]->toString() << std::endl;
     row["Surname"] = new types::VarChar("Blabla");
     std::cout << "Wartosci:" << std::endl;
@@ -113,11 +115,14 @@ void row_test()
     }
     
     std::cout << "Test zapisywania w pamieci" << std::endl;
-    // row["Name"] = nullptr;
-    char buffer[PAGE_SIZE];
+    row["Name"] = nullptr;
+    char buffer[PAGE_SIZE] = { 0 };
     RowWriter rw;
     rw.write(buffer, row);
     std::cout << format_bytes(buffer, 300) << std::endl;
+    
+    RowReader rr;
+    std::cout << *rr.read(buffer, fmt);
 }
 
 

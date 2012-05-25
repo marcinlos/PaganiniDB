@@ -5,11 +5,11 @@
     Ile      Znaczenie
      2       Flagi wiersza   
      2       Ilosc kolumn
+  ceil(N/8)  Bitmapa NULL-i
      2       Laczna dlugosci danych pol stalej wielkosci
      n       Dane stalej dlugosci
      2       Ilosc kolumn o zmiennej dlugosci
-  ceil(N/8)  Bitmapa NULL-i
- 2x zmienne  Offsety pol zmiennej dlugosci
+2x (zmienne+1)  Offsety pol zmiennej dlugosci + offset za koniec
      n       Pola zmiennej dlugosci     
 */
 #ifndef __PAGANINI_ROW_ROW_WRITER_H__
@@ -18,6 +18,7 @@
 #include <paganini/row/Row.h>
 #include <paganini/util/bits.h>
 #include <paganini/row/OutputBinaryStream.h>
+#include <paganini/row/FieldFactory.h>
 #include <vector>
 #include <algorithm>
 
@@ -31,31 +32,45 @@ namespace paganini
 class RowWriter
 {
 private:
-    typedef std::vector<char> bitmap;
+    // typedef std::vector<char> bitmap;
     
     // Tworzy bitmape NULL-i w wierszu
-    bitmap createNullBitmap(const Row& row)
+    util::Bitmap createNullBitmap(const Row& row)
     {
         size16 cols = row.columnCount();
-        bitmap bmp(util::min_bytes(cols));
-        char* bytes = &bmp[0];
+        util::Bitmap bmp(cols/*util::min_bytes(cols)*/);
+        // char* bytes = &bmp[0];
         
         for (int i = 0; i < cols; ++ i)
         {
-            if (! row.isNull(i))
-                util::set_bit(bytes, i);
+            bmp[i] = row.isNull(i);
         }
         return bmp;
+    }
+    
+    size16 totalFixedSize(const RowFormat& format, const FieldFactory& factory)
+    {
+        size16 sum = 0;
+        for (const Column& col: format.fixed())
+            sum += factory.size(col.type);
+        
+        return sum;
     }
 
 public:
     size16 write(raw_data buffer, const Row& row)
     {
+        FieldFactory& factory = FieldFactory::getInstance();
         const RowFormat& format = row.format();
         OutputBinaryStream stream(buffer);
         stream.write(row.flags());
         stream.write(row.columnCount());
-        stream.write(format.totalFixedSize());
+
+        // Bitmapa nulli
+        util::Bitmap null_bitmap = createNullBitmap(row);
+        stream.writeRange(null_bitmap.bytes_begin(), null_bitmap.bytes_end());
+        
+        stream.write(totalFixedSize(format, factory));
         
         // Zapisujemy dane stalej dlugosci
         for (auto i: format.fixedIndices())
@@ -63,23 +78,21 @@ public:
             if (row[i] != nullptr)
                 row[i]->writeTo(stream);
             else 
-                stream.skip(format[i].size);
+                stream.skip(factory.size(format[i].type));
         }
             
         stream.write(row.variableColumnCount());
-        
-        // Bitmapa nulli
-        bitmap null_bitmap = createNullBitmap(row);
-        stream.writeRange(null_bitmap.begin(), null_bitmap.end());
 
         page_offset offset = stream.getOffset() 
-            + row.variableColumnCount() * sizeof(page_offset);        
+            + (row.variableColumnCount() + 1) * sizeof(page_offset);        
         for (auto field: row.variable())
         {
             stream.write(offset);
             if (field != nullptr)
                 offset += field->size();
         }
+        // Offset za koniec
+        stream.write(offset);
             
         // Zapisuje same dane
         for (auto field: row.variable())

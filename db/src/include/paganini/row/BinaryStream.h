@@ -26,7 +26,9 @@ public:
     // Pozostale metody
     page_offset getOffset() const;
     
-    void skip(size16 offset);
+    void setOffset(page_offset offset);
+    
+    void skip(page_offset offset);
     
     raw_data getBuffer();
 };

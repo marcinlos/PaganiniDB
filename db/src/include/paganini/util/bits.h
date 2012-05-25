@@ -6,6 +6,7 @@
 #define __PAGANINI_UTIL_BITS_H__
 
 #include <cstdint>
+#include <vector>
 
 namespace paganini
 {
@@ -36,7 +37,7 @@ inline void unset_bit(raw_data data, int bit)
 
 
 // Zwraca wartosc bitu o podanym numerze
-inline bool get_bit(raw_data data, int bit)
+inline bool get_bit(const_raw_data data, int bit)
 {
     data += bit / 8;
     return ((*data) & (1 << (bit % 8))) != 0;
@@ -75,6 +76,58 @@ inline int first_nonzero_bit(unsigned char byte)
     }
     else return -1;
 }
+
+
+// Dynamiczny bitset, brakuje go niestety w stl-u.
+class Bitmap
+{
+private:
+    std::vector<char> _data;
+    size16 _bits;
+public:
+    typedef std::vector<char>::iterator bytes_iterator;
+    typedef std::vector<char>::const_iterator const_bytes_iterator;
+    
+
+    Bitmap(size16 bits): _data(min_bytes(bits)), _bits(bits)
+    {
+    }
+    
+    // Wewnetrzny typ symulujacy zachowanie "referencji na bit"
+    class BitProxy
+    {
+    private:
+        Bitmap& bitmap;
+        const int index;
+        
+    public:
+        BitProxy(Bitmap& bitmap, int index): bitmap(bitmap), index(index)
+        {
+        }
+        
+        operator bool () const { return get_bit(&bitmap._data[0], index); }
+        BitProxy& operator = (bool val)
+        {
+            val ? set_bit(&bitmap._data[0], index) : 
+                unset_bit(&bitmap._data[0], index);
+            return *this;
+        }
+    };
+    
+    BitProxy operator [] (int i) { return { *this, i }; }
+    bool operator [] (int i) const { return get_bit(&_data[0], i); }
+    
+    const std::vector<char>& raw_data() const { return _data; }
+    std::vector<char>& raw_data() { return _data; }
+    
+    size16 size() const { return _bits; }
+    
+    bytes_iterator bytes_begin() { return _data.begin(); }
+    bytes_iterator bytes_end() { return _data.end(); }
+    
+    const_bytes_iterator bytes_begin() const { return _data.begin(); }
+    const_bytes_iterator bytes_end() const { return _data.end(); }
+};
 
 } // util
 } // paganini

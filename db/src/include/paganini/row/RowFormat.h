@@ -14,6 +14,7 @@
 #include <vector>
 #include <unordered_map>
 #include <iterator>
+#include <iostream>
 using std::string;
 
 
@@ -26,12 +27,10 @@ struct Column
     column_number col;
     types::FieldType type;
     column_flags flags;
-    size16 size;
     string name;
     
     // Brak numeru kolumny - ustawiana przy wstawianiu do danych wiersza
-    Column(types::FieldType type, string name, column_flags flags = 0,
-        size16 size = 0);
+    Column(types::FieldType type, string name, column_flags flags = 0);
     
     // Konstruktor przenoszacy, unika kopiowania stringa
     Column(Column&& other);
@@ -39,6 +38,12 @@ struct Column
     // Zwyczajny konstruktor kopiujacy
     Column(const Column& other);
 };
+
+inline std::ostream& operator << (std::ostream& os, const Column& column)
+{
+    return os << column.col << ") " << column.name << " [" 
+        << column.type << "]";
+}
 
 
 
@@ -50,7 +55,6 @@ private:
     std::vector<int> _fixed;
     std::vector<int> _variable;
     std::unordered_map<string, int> _names;
-    size16 _fixed_size;
     
 public:
 
@@ -78,9 +82,6 @@ public:
     
     // Zwraca ilosc kolumn o stalym rozmiarze
     size16 fixedColumnCount() const;
-    
-    // Zwraca laczna dlugosc pol o stalym rozmiarze
-    size16 totalFixedSize() const;
     
     // Zwraca ilosc kolumn o zmiennym rozmiarze
     size16 variableColumnCount() const;
@@ -115,6 +116,16 @@ public:
     
     const Column& operator [] (column_number col) const;
 };
+
+// Wypisywanie, potrzebne bylo przy debugowaniu
+inline std::ostream& operator << (std::ostream& os, const RowFormat& format)
+{
+    for (const Column& column: format)
+    {
+        os << column << std::endl;
+    }
+    return os;
+}
 
 
 }

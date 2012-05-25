@@ -44,11 +44,10 @@ void Row::setField(size16 index, types::Data* data)
     {
         // Potem typ
         const Column& col = _format.columns()[index];
-        if (data->type() != col.type)
+        if (data != nullptr && data->type() != col.type)
         {
             throw std::logic_error(util::format("Types don't match; "
-                "got {}, {} expected", static_cast<int>(data->type()), 
-                static_cast<int>(col.type)));
+                "got {}, {} expected", data->type(), col.type));
         }
         // Zapisujemy w wektorze
         _fields[index] = DataPtr(data);

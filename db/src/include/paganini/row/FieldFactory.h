@@ -19,29 +19,38 @@ namespace paganini
 
 class FieldFactory: public util::Singleton<FieldFactory>
 {
+public:
+    typedef std::function<types::Data* (size16)> Creator;
+    typedef std::unique_ptr<types::Data> DataPtr;
+    
 private:
-    typedef types::FieldMetadata Metadata;
-    std::unordered_map<types::FieldType, Metadata> types;
+    struct FieldMetadata
+    {       
+        Creator creator;
+        std::function<size16 (size16)> size;
+        
+        types::Data* operator () (size16 size = 0) const
+        {
+            return creator(size);
+        }
+    };
+
+    std::unordered_map<types::ContentType, FieldMetadata> types;
 
     friend class util::Singleton<FieldFactory>;
     FieldFactory();
     
 public:
-    typedef std::unique_ptr<types::Data> DataPtr;
-    typedef types::FieldMetadata::Creator Creator;
- 
     // Zwraca obiekt pola o podanym typie . Rzuca wyjatek, jesli nie
-    // mozna stworzyc takiego obiektu. Argument size jest opcjonalny,
-    // podawac go nalezy dla typow o stalej, acz nie znanej na etapie
-    // kompilacji dlugosci.
-    DataPtr create(types::FieldType type, size16 size = 0) const;
+    // mozna stworzyc takiego obiektu.
+    DataPtr create(types::FieldType type) const;
     
-    // Zwraca informacje o typie
-    const Metadata& getMetadata(types::FieldType type) const;
-    const Metadata& operator [](types::FieldType type) const;
-    
+    // Zwraca rozmiar (w bajtach) fizycznej reprezentacji danego typu,
+    // lub types::VARIABLE_SIZE jesli typ jest zmiennej dlugosci.
+    size16 size(types::FieldType type) const;
+
     // Zmienia funkcje tworzaca dla podanego typu. Zwraca poprzednia.
-    Creator registerCreator(types::FieldType type, Creator creator);
+    Creator registerCreator(types::ContentType type, Creator creator);
 };
 
 
