@@ -54,10 +54,6 @@ public:
     {
         return *(page_.get());
     }
-    
-    //
-    
-    
 };
 
 

@@ -32,14 +32,11 @@ namespace paganini
 class RowWriter
 {
 private:
-    // typedef std::vector<char> bitmap;
-    
     // Tworzy bitmape NULL-i w wierszu
     util::Bitmap createNullBitmap(const Row& row)
     {
         size16 cols = row.columnCount();
-        util::Bitmap bmp(cols/*util::min_bytes(cols)*/);
-        // char* bytes = &bmp[0];
+        util::Bitmap bmp(cols);
         
         for (int i = 0; i < cols; ++ i)
         {
@@ -48,12 +45,14 @@ private:
         return bmp;
     }
     
+    // Oblicza sumaryczny rozmiar pol stalej wielkosci.
     size16 totalFixedSize(const RowFormat& format, const FieldFactory& factory)
     {
         size16 sum = 0;
         for (const Column& col: format.fixed())
+        {
             sum += factory.size(col.type);
-        
+        }
         return sum;
     }
 

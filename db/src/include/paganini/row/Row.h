@@ -20,41 +20,27 @@ namespace paganini
 
 class Row
 {
-private:
+public:
+    // Definicje typow wskaznikowych zwracanych przez funkcje udostepniajace
+    // pola wiersza
     typedef std::shared_ptr<types::Data> DataPtr;
     typedef std::shared_ptr<const types::Data> ConstDataPtr;
+    
+private:
     typedef std::vector<DataPtr> container;
     
-    const RowFormat& _format;   
-    container _fields;
-    row_flags _flags;
-
 public:
+    // Typ zwracany przez funkcje udostepniajace 'widok' podzbioru wiersza
     typedef util::IndexedView<std::vector<int>::const_iterator,
         std::vector<DataPtr>::const_iterator> FieldPtrVector;
         
+    // Definicje iteratorow do iterowania po polach wiersza
     typedef typename container::iterator iterator;
     typedef typename container::const_iterator const_iterator;
     
     // Proxy do pol - zapobiega ustawieniu nieprawidlowych pol
-    class FieldProxy
-    {
-        Row& row;
-        const int index;
-        
-    public:
-        FieldProxy(Row& row, size16 index): row(row), index(index) { }
-        operator DataPtr () { return row._fields[index]; }
-        FieldProxy& operator = (types::Data* data)
-        {
-            row.setField(index, data);
-            return *this;
-        }
-        DataPtr operator -> () const { return row._fields[index]; }
-        types::Data& operator * () const { return *(row._fields[index]); }
-    };
+    class FieldProxy;
     
-
     // Inicjalizuje wiersz wskaznikami do danych
     Row(const RowFormat& format, std::initializer_list<types::Data*> fields,
         row_flags flags = 0);
@@ -116,6 +102,30 @@ public:
     FieldProxy operator [] (column_number col);
     
     ConstDataPtr operator [] (column_number col) const;
+    
+private:
+    const RowFormat& _format;   
+    container _fields;
+    row_flags _flags;    
+};
+
+// Proxy do pol - zapobiega ustawieniu nieprawidlowych pol
+class Row::FieldProxy
+{
+private:
+    Row& row;
+    const int index;
+
+public:
+    FieldProxy(Row& row, size16 index): row(row), index(index) { }
+    operator DataPtr () { return row._fields[index]; }
+    FieldProxy& operator = (types::Data* data)
+    {
+        row.setField(index, data);
+        return *this;
+    }
+    DataPtr operator -> () const { return row._fields[index]; }
+    types::Data& operator * () const { return *(row._fields[index]); }
 };
 
 
@@ -124,7 +134,8 @@ inline std::ostream& operator << (std::ostream& os, const Row& row)
     for (const Column& column: row.format())
     {
         auto data = row[column.col];
-        os << column << ": " << (data ? data->toString() : "NULL") << std::endl;
+        os << column << ": " << (data ? data->toString() : "NULL") 
+            << std::endl;
     }
     return os;
 }

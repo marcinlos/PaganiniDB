@@ -24,12 +24,19 @@ namespace paganini
 // Opis pojedynczej kolumny
 struct Column
 {
-    column_number col;
-    types::FieldType type;
-    column_flags flags;
+    // Nazwa pola
     string name;
     
-    // Brak numeru kolumny - ustawiana przy wstawianiu do danych wiersza
+    // Numer kolumny w wierszu
+    column_number col;
+    
+    // Pelny typ pola
+    types::FieldType type;
+    
+    // Flagi kolumny
+    column_flags flags;
+    
+    // Brak numeru kolumny - wstrzykiwany przez RowFormat przy dodawaniu
     Column(types::FieldType type, string name, column_flags flags = 0);
     
     // Konstruktor przenoszacy, unika kopiowania stringa
@@ -39,6 +46,7 @@ struct Column
     Column(const Column& other);
 };
 
+// Przeciazany operator wypisania dla definicji kolumny - do debugowania
 inline std::ostream& operator << (std::ostream& os, const Column& column)
 {
     return os << column.col << ") " << column.name << " [" 
@@ -46,16 +54,9 @@ inline std::ostream& operator << (std::ostream& os, const Column& column)
 }
 
 
-
 // Opis calego wiersza
 class RowFormat
-{
-private:
-    std::vector<Column> _columns;
-    std::vector<int> _fixed;
-    std::vector<int> _variable;
-    std::unordered_map<string, int> _names;
-    
+{    
 public:
 
     typedef util::IndexedView<std::vector<int>::const_iterator,
@@ -115,6 +116,12 @@ public:
     Column& operator [] (column_number col);
     
     const Column& operator [] (column_number col) const;
+    
+private:
+    std::vector<Column> _columns;
+    std::vector<int> _fixed;
+    std::vector<int> _variable;
+    std::unordered_map<string, int> _names;
 };
 
 // Wypisywanie, potrzebne bylo przy debugowaniu

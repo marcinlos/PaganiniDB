@@ -18,19 +18,32 @@ inline char hex_digit(int i)
     return i < 10 ? i + '0' : i - 10 + 'A';
 }
 
+inline unsigned char make_ascii(unsigned char c)
+{
+    return c == '\0' ? '.' : (c < ' ' ? ' ' : c);
+}
+
 string format_bytes(raw_data data, size16 len, size16 in_line = 16)
 {
     std::ostringstream ss;
-    for (int i = 0; i < len; ++ i)
+    int lines = (len + in_line - 1) / in_line;
+    for (int i = 0; i < len / in_line; ++ i)
     {
-        unsigned char c = static_cast<unsigned char>(data[i]);
-        ss << hex_digit(c / 16);
-        ss << hex_digit(c % 16);
-        ss << ' ';
-        if ((i + 1) % in_line == 0)
-            ss << std::endl; 
-        else if ((i + 1) % 2 == 0)
-            ss << ' ';
+        unsigned char* d = reinterpret_cast<unsigned char*>(data + i * in_line);
+        for (int j = 0; j < in_line; ++ j)
+        {
+            ss << hex_digit((d[j] & 0xf0) >> 8);
+            ss << hex_digit(d[j] & 0x0f);
+            ss << ' '; 
+            if ((j + 1) % 2 == 0)
+                ss << ' ';
+        }
+        ss << "| ";
+        for (int j = 0; j < in_line; ++ j)
+        {
+            ss << make_ascii(d[j]);
+        }
+        ss << std::endl;
     }
     return ss.str();
 }

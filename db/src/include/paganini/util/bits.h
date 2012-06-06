@@ -105,7 +105,14 @@ public:
         {
         }
         
-        operator bool () const { return get_bit(&bitmap._data[0], index); }
+        // Zwraca wartosc boolowska z oryginalnej tablicy
+        operator bool () const 
+        { 
+            return get_bit(&bitmap._data[0], index); 
+        }
+        
+        // Przypisanie - razem z powyzszym pozwalaja w wiekszosci przypadkow
+        // traktowac klase jako 'referencje na bit'
         BitProxy& operator = (bool val)
         {
             val ? set_bit(&bitmap._data[0], index) : 
@@ -114,20 +121,27 @@ public:
         }
     };
     
+    // Dostep poprzez indeksy
     BitProxy operator [] (int i) { return { *this, i }; }
     bool operator [] (int i) const { return get_bit(&_data[0], i); }
     
+    // Zwraca pamiec, w ktorej przechowywane sa bity
     const std::vector<char>& raw_data() const { return _data; }
     std::vector<char>& raw_data() { return _data; }
     
+    // Zwraca ilosc przechowywanych bitow
     size16 size() const { return _bits; }
     
+    // Iteracja po bajtach. Glownie ze wzgledu na koniecznosc zapisywania
+    // binarnego.
     bytes_iterator bytes_begin() { return _data.begin(); }
     bytes_iterator bytes_end() { return _data.end(); }
     
     const_bytes_iterator bytes_begin() const { return _data.begin(); }
     const_bytes_iterator bytes_end() const { return _data.end(); }
 };
+
+
 
 } // util
 } // paganini

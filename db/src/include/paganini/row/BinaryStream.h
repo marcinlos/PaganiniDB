@@ -15,22 +15,27 @@ namespace paganini
 
 
 class BinaryStream
-{
+{    
+public:
+    // Tworzy strumien operujacy na podanym buforze, z poczatkowym 
+    // offsetem ustawionym na offset
+    BinaryStream(raw_data buffer, size16 offset = 0);
+       
+    // Zwraca bierzaca pozycje czytania/pisania
+    page_offset getOffset() const;
+    
+    // Ustawia bierzaca pozycje czytania/pisania
+    void setOffset(page_offset offset);
+    
+    // Przesuwa obecna pozycje o offset bajtow
+    void skip(page_offset offset);
+    
+    // Zwraca bufor, na ktorym strumien operuje
+    raw_data getBuffer();
+    
 protected:
     raw_data buffer;
     page_offset offset;
-    
-public:
-    BinaryStream(raw_data buffer, size16 offset = 0);
-       
-    // Pozostale metody
-    page_offset getOffset() const;
-    
-    void setOffset(page_offset offset);
-    
-    void skip(page_offset offset);
-    
-    raw_data getBuffer();
 };
 
 }

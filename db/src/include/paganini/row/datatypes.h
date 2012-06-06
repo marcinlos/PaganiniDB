@@ -244,9 +244,9 @@ public:
 } // types
 } // paganini
 
-// Fabryka potrzebuje hashowalnych typow
 namespace std
 {
+    // Gwarantuje hashowalnosc ContentType
     template <>
     struct hash<paganini::types::ContentType>
     {
@@ -258,3 +258,4 @@ namespace std
 }
 
 #endif // __PAGANINI_ROW_DATATYPES_H__
+

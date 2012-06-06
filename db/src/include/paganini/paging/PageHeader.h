@@ -45,10 +45,11 @@ struct PageHeader
     // Flagi strony (BITS_PER_PAGE_TYPE najmlodszych bitow to typ strony)
     page_flags flags;
     
+    // Tworzy strone z podanym numerem i typem
+    explicit PageHeader(page_number number, PageType type = PageType::UNUSED);
+    
     // Wypelnia informacje naglowka (dziala tak samo, jak konstruktor)
     void fill(page_number number, PageType type = PageType::UNUSED);
-    
-    explicit PageHeader(page_number number, PageType type = PageType::UNUSED);
 }; 
 
 static const int HEADER_SIZE = sizeof(PageHeader);

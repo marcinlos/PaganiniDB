@@ -20,12 +20,21 @@ size16 OutputBinaryStream::writeData(raw_data buffer,
 
 
 template <>
-size16 OutputBinaryStream::write<float>(raw_data buffer, float value)
+size16 OutputBinaryStream::write<float>(raw_data buffer, const float& value)
 {
     // TODO: poprawic...
     *reinterpret_cast<float*>(buffer) = value;
     return sizeof(value);
 }
+
+/*
+template <>
+size16 OutputBinaryStream::write<double>(raw_data buffer, const double& value)
+{
+    // TODO: poprawic...
+    *reinterpret_cast<float*>(buffer) = value;
+    return sizeof(value);
+}*/
 
 
 size16 OutputBinaryStream::writeData(const_raw_data data, size16 length)

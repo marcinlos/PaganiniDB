@@ -44,24 +44,6 @@ inline bool isUV(page_number page)
 // bazy danych, jak rowniez zapis/odczyt stron.
 class PageManager: public util::Singleton<PageManager>
 {
-private:
-    const static int EMPTY_FD = -1;
-    int fd_;
-    void moveToPage_(page_number page);
-    void createHeader_();
-    page_number createUVPage_(page_number previous_uv);
-    static page_number findUV_(page_number number);
-    page_number readUVOfPage_(page_number number, Page* page);
-    bool markAsUsed_(page_number number);
-    bool markAsFree_(page_number number);
-    int scanForFree_(const Page* uv);
-    void growFile_(size32 page_count);
-    page_number findFree_();
-    
-    // Singleton
-    friend class util::Singleton<PageManager>;
-    PageManager();
-
 public:
     //static PageManager& getInstance();
 
@@ -88,6 +70,26 @@ public:
     // Zapisuje do strony o podanym numerze dane z bufora. W celu zachowania 
     // spojnosci danych, strona powinna istniec i byc zaznaczona jako uzyta.
     void writePage(page_number number, const Page* page);
+    
+private:
+    const static int EMPTY_FD = -1;
+    int fd_;
+    void moveToPage_(page_number page);
+    void createHeader_();
+    page_number createUVPage_(page_number previous_uv);
+    static page_number findUV_(page_number number);
+    page_number readUVOfPage_(page_number number, Page* page);
+    bool markAsUsed_(page_number number);
+    bool markAsFree_(page_number number);
+    int scanForFree_(const Page* uv);
+    void growFile_(size32 page_count);
+    page_number findFree_();
+    
+    // Singleton
+    friend class util::Singleton<PageManager>;
+    PageManager();
+
+
 
 };
 

@@ -64,24 +64,6 @@ size16 FieldFactory::size(types::FieldType type) const
     return i->second.size(type.size);
 }
 
-/*
-const FieldFactory::Metadata& 
-    FieldFactory::operator [](types::FieldType type) const
-{
-    return getMetadata(type);
-}
-
-const FieldFactory::Metadata& 
-    FieldFactory::getMetadata(types::FieldType type) const
-{
-    auto i = types.find(type);
-    if (i == types.end())
-        throw std::logic_error(util::format("Missing entry for '{}'"
-            "field type", static_cast<int>(type)));
-            
-    return i->second;
-}
-*/
 
 FieldFactory::Creator FieldFactory::registerCreator(types::ContentType content, 
     Creator creator)
