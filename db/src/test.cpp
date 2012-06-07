@@ -145,7 +145,7 @@ int main()
         Row row(fmt, { new types::Int(432), new types::Float(1.23),
             new types::VarChar("Spadaj"), new types::VarChar("Cieciu") });
             
-        printf("%d\n", static_cast<int>(row["Jebaka"]->type()));
+        printf("%d\n", static_cast<int>(row["Costam"]->type()));
         
         for (std::shared_ptr<types::Data> p: row)
         {

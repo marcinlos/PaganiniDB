@@ -100,7 +100,6 @@ size16 OutputBinaryStream::writeRange(Iter begin, Iter end)
 }
 
 
-
 }
 
 
