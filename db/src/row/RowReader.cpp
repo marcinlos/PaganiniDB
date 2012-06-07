@@ -1,6 +1,6 @@
 #include "config.h"
 #include <paganini/util/bits.h>
-#include <paganini/row/InputBinaryStream.h>
+#include <paganini/io/InputBinaryStream.h>
 #include <paganini/row/RowReader.h>
 
 

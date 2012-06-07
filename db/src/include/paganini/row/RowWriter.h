@@ -17,7 +17,6 @@
 
 #include <paganini/row/Row.h>
 #include <paganini/util/bits.h>
-#include <paganini/row/OutputBinaryStream.h>
 #include <paganini/row/FieldFactory.h>
 
 
@@ -28,16 +27,23 @@ namespace paganini
 class RowWriter
 {
 public:
+    RowWriter();
+    
     // Zapisuje podany wiersz do miejsca w pamieci wyznaczonego przez argument
     // buffer. Zwraca ilosc zapisanych bajtow.
     size16 write(raw_data buffer, const Row& row);
     
+    // Oblicza ilosc miejsca potrzebna do zapisania podanego wiersza
+    size16 length(const Row& row) const;
+    
 private:
+    FieldFactory& factory;
+    
     // Tworzy bitmape NULL-i w wierszu
-    util::Bitmap createNullBitmap(const Row& row);
+    util::Bitmap createNullBitmap(const Row& row) const;
     
     // Oblicza sumaryczny rozmiar pol stalej wielkosci.
-    size16 totalFixedSize(const RowFormat& format, const FieldFactory& factory);
+    size16 totalFixedSize(const RowFormat& format) const;
 };
 
 

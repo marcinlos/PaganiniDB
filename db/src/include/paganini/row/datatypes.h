@@ -9,8 +9,8 @@
 #define __PAGANINI_ROW_DATATYPES_H__
 
 #include <paganini/paging/Page.h>
-#include <paganini/row/OutputBinaryStream.h>
-#include <paganini/row/InputBinaryStream.h>
+#include <paganini/io/OutputBinaryStream.h>
+#include <paganini/io/InputBinaryStream.h>
 #include <paganini/paging/types.h>
 #include <paganini/util/format.h>
 #include <string>

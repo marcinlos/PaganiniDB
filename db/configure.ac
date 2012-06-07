@@ -28,6 +28,7 @@ AC_CONFIG_FILES([Makefile
                  src/Makefile
                  src/error_msg/Makefile
                  src/paging/Makefile
-                 src/row/Makefile])
+                 src/row/Makefile
+                 src/io/Makefile])
                  
 AC_OUTPUT

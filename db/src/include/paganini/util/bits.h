@@ -18,7 +18,7 @@ namespace util
 // Zwraca najmniejsza ilosc bajtow zdolna pomiescic tyle bitow
 inline int min_bytes(int bit_count)
 {
-    return bit_count > 0 ? (bit_count - 1) / 8 + 1 : 0;
+    return (bit_count + 7) / 8;
 }
 
 // Ustawia w data bit o podanym numerze

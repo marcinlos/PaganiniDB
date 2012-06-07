@@ -1,5 +1,5 @@
 #include "config.h"
-#include <paganini/row/BinaryStream.h>
+#include <paganini/io/BinaryStream.h>
 
 namespace paganini
 {

@@ -6,7 +6,7 @@
 #define __PAGANINI_ROW_INPUT_BINARY_STREAM_H__
 
 #include <paganini/paging/types.h>
-#include <paganini/row/BinaryStream.h>
+#include <paganini/io/BinaryStream.h>
 #include <cstring>
 #include <iterator>
 #include <iostream>

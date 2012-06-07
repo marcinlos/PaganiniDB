@@ -10,6 +10,7 @@
 #include <paganini/row/FieldFactory.h>
 #include <cstdio>
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 using namespace paganini;
 
@@ -29,6 +30,7 @@ string format_bytes(raw_data data, size16 len, size16 in_line = 16)
     int lines = (len + in_line - 1) / in_line;
     for (int i = 0; i < len / in_line; ++ i)
     {
+        ss << std::setw(3) << std::hex << i * in_line << " |";
         unsigned char* d = reinterpret_cast<unsigned char*>(data + i * in_line);
         for (int j = 0; j < in_line; ++ j)
         {
@@ -124,6 +126,7 @@ void row_test()
     row["Name"] = nullptr;
     char buffer[PAGE_SIZE] = { 0 };
     RowWriter rw;
+    std::cout << "Przewidywany rozmiar: " << rw.length(row) << std::endl;
     rw.write(buffer, row);
     std::cout << "Zrzut pamieci zapisanej przez RowWritera:" << std::endl;
     std::cout << format_bytes(buffer, 300) << std::endl;
