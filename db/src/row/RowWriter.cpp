@@ -1,5 +1,6 @@
 #include "config.h"
 #include <paganini/row/RowWriter.h>
+#include <paganini/util/bits.h>
 #include <paganini/io/OutputBinaryStream.h>
 #include <vector>
 #include <algorithm>
@@ -82,7 +83,7 @@ size16 RowWriter::write(raw_data buffer, const Row& row)
 }
 
 
-size16 RowWriter::length(const Row& row) const
+size16 RowWriter::size(const Row& row) const
 {
     size16 length = 0;
     // Naglowek + flagi

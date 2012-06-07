@@ -104,9 +104,9 @@ public:
     ConstDataPtr operator [] (column_number col) const;
     
 private:
-    const RowFormat& _format;   
-    container _fields;
-    row_flags _flags;    
+    const RowFormat& format_;   
+    container fields_;
+    row_flags flags_;    
 };
 
 // Proxy do pol - zapobiega ustawieniu nieprawidlowych pol
@@ -118,14 +118,14 @@ private:
 
 public:
     FieldProxy(Row& row, size16 index): row(row), index(index) { }
-    operator DataPtr () { return row._fields[index]; }
+    operator DataPtr () { return row.fields_[index]; }
     FieldProxy& operator = (types::Data* data)
     {
         row.setField(index, data);
         return *this;
     }
-    DataPtr operator -> () const { return row._fields[index]; }
-    types::Data& operator * () const { return *(row._fields[index]); }
+    DataPtr operator -> () const { return row.fields_[index]; }
+    types::Data& operator * () const { return *(row.fields_[index]); }
 };
 
 

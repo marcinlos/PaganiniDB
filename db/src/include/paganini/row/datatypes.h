@@ -163,7 +163,7 @@ public:
     
     FieldType type() const { return { V, FieldType::NON_APPLICABLE }; }
     
-    string toString() const 
+    string toString() const
     { 
         return util::format("{}", val); 
     }

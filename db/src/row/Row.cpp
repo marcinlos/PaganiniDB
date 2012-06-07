@@ -12,9 +12,9 @@ Row::Row(const RowFormat& format,
     std::initializer_list<types::Data*> fields,
     row_flags flags):
     
-    _format(format), 
-    _fields(format.columnCount(), nullptr),
-    _flags(flags)
+    format_(format), 
+    fields_(format.columnCount(), nullptr),
+    flags_(flags)
 {
     int i = 0;
     for (types::Data* data: fields)
@@ -23,16 +23,16 @@ Row::Row(const RowFormat& format,
 
 
 Row::Row(const RowFormat& format, row_flags flags): 
-    _format(format), 
-    _fields(format.columnCount(), nullptr),
-    _flags(flags)
+    format_(format), 
+    fields_(format.columnCount(), nullptr),
+    flags_(flags)
 {
 }
 
 
 Row::Row(Row&& other): 
-    _format(other._format),
-    _fields(std::move(other._fields))
+    format_(other.format_),
+    fields_(std::move(other.fields_))
 {
 }
 
@@ -40,33 +40,33 @@ Row::Row(Row&& other):
 void Row::setField(size16 index, types::Data* data)
 {
     // Najpierw sprawdzamy rozmiar
-    if (index < _format.columnCount())
+    if (index < format_.columnCount())
     {
         // Potem typ
-        const Column& col = _format.columns()[index];
+        const Column& col = format_.columns()[index];
         if (data != nullptr && data->type() != col.type)
         {
             throw std::logic_error(util::format("Types don't match; "
                 "got {}, {} expected", data->type(), col.type));
         }
         // Zapisujemy w wektorze
-        _fields[index] = DataPtr(data);
+        fields_[index] = DataPtr(data);
     }
     else
         throw std::logic_error(util::format("Too many fields; row has "
-            "{} columns", _format.columnCount()));    
+            "{} columns", format_.columnCount()));    
 }
 
 
 const RowFormat& Row::format() const
 {
-    return _format;
+    return format_;
 }
 
 
 row_flags Row::flags() const
 {
-    return _flags;
+    return flags_;
 }
 
 
@@ -74,25 +74,25 @@ row_flags Row::flags() const
 
 Row::iterator Row::begin()
 {
-    return _fields.begin();
+    return fields_.begin();
 }
 
 
 Row::iterator Row::end()
 {
-    return _fields.end();
+    return fields_.end();
 }
 
 
 Row::const_iterator Row::begin() const
 {
-    return _fields.begin();
+    return fields_.begin();
 }
 
 
 Row::const_iterator Row::end() const
 {
-    return _fields.end();
+    return fields_.end();
 }
 
 
@@ -100,34 +100,34 @@ Row::const_iterator Row::end() const
 
 size16 Row::columnCount() const
 {
-    return _format.columnCount();
+    return format_.columnCount();
 }
 
 
 size16 Row::fixedColumnCount() const
 {
-    return _format.fixedColumnCount();
+    return format_.fixedColumnCount();
 }
 
 
 size16 Row::variableColumnCount() const
 {
-    return _format.variableColumnCount();
+    return format_.variableColumnCount();
 }
 
 
 const std::vector<Row::DataPtr>& Row::columns() const
 {
-    return _fields;
+    return fields_;
 }
 
 
 Row::FieldPtrVector Row::fixed() const
 {
     return {
-        _format.fixedIndices().begin(), 
-        _format.fixedIndices().end(), 
-        _fields.begin()
+        format_.fixedIndices().begin(), 
+        format_.fixedIndices().end(), 
+        fields_.begin()
     };
 }
 
@@ -135,16 +135,16 @@ Row::FieldPtrVector Row::fixed() const
 Row::FieldPtrVector Row::variable() const
 {
     return {
-        _format.variableIndices().begin(),
-        _format.variableIndices().end(), 
-        _fields.begin()
+        format_.variableIndices().begin(),
+        format_.variableIndices().end(), 
+        fields_.begin()
     };
 }
 
 
 column_number Row::getColumnNumber(const string& name) const
 {
-    return _format.getColumnNumber(name);
+    return format_.getColumnNumber(name);
 }
 
 
@@ -192,7 +192,7 @@ Row::FieldProxy Row::operator [] (column_number col)
 
 Row::ConstDataPtr Row::operator [] (column_number col) const
 {
-    return _fields[col];
+    return fields_[col];
 }
 
 

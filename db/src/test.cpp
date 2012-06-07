@@ -8,6 +8,7 @@
 #include <paganini/row/RowWriter.h>
 #include <paganini/row/RowReader.h>
 #include <paganini/row/FieldFactory.h>
+#include <paganini/paging/DataPage.h>
 #include <cstdio>
 #include <iostream>
 #include <iomanip>
@@ -30,7 +31,7 @@ string format_bytes(raw_data data, size16 len, size16 in_line = 16)
     int lines = (len + in_line - 1) / in_line;
     for (int i = 0; i < len / in_line; ++ i)
     {
-        ss << std::setw(3) << std::hex << i * in_line << " |";
+        ss << std::setw(4) << std::hex << i * in_line << " |";
         unsigned char* d = reinterpret_cast<unsigned char*>(data + i * in_line);
         for (int j = 0; j < in_line; ++ j)
         {
@@ -53,7 +54,42 @@ string format_bytes(raw_data data, size16 len, size16 in_line = 16)
     return ss.str();
 }
 
-void database_creation()
+class Test
+{    
+public:
+    Test();
+    void databaseCreationTest();
+    void rowFormatTest();
+    void rowTest();
+    void dataPageTest();
+    
+private:
+    RowFormat fmt;
+    Row row;
+    
+    void setRow(int count, float variance, const string& name,
+        const string& surname, const string& description);
+};
+
+Test::Test(): 
+    fmt({ 
+        {types::ContentType::Int, "count"}, 
+        {types::ContentType::Float, "variance"},
+        {{types::ContentType::Char, 14}, "Name"},
+        {types::ContentType::VarChar, "Surname"},
+        {types::ContentType::VarChar, "Description"}
+    }),
+    row(fmt, { 
+        new types::Int(432), 
+        new types::Float(1.23),
+        new types::Char(14, "Aram"),
+        new types::VarChar("Khachaturian"),
+        new types::VarChar("Kompozytor radziecki")
+    })
+{
+}
+
+void Test::databaseCreationTest()
 {
     PageManager& manager = PageManager::getInstance();
     manager.createFile("db");
@@ -62,16 +98,18 @@ void database_creation()
     manager.closeFile();
 }
 
-void row_format_test()
+void Test::setRow(int count, float variance, const string& name,
+    const string& surname, const string& description)
 {
-    RowFormat fmt = 
-    { 
-        {types::ContentType::Int, "count"}, 
-        {types::ContentType::Float, "variance"},
-        {{types::ContentType::Char, 14}, "Name"},
-        {types::ContentType::VarChar, "Surname"},
-        {types::ContentType::VarChar, "Description"}
-    };
+    row["count"] = new types::Int(count);
+    row["variance"] = new types::Float(variance);
+    row["Name"] = new types::Char(14, name);
+    row["Surname"] = new types::VarChar(surname);
+    row["Description"] = new types::VarChar(description);
+}
+
+void Test::rowFormatTest()
+{
     std::cout << "Nasz wiersz:" << std::endl;
     std::cout << fmt << std::endl;
 
@@ -89,25 +127,8 @@ void row_format_test()
     }
 }
 
-void row_test()
-{    
-    RowFormat fmt = 
-    { 
-        {types::ContentType::Int, "count"}, 
-        {types::ContentType::Float, "variance"},
-        {{types::ContentType::Char, 14}, "Name"},
-        {types::ContentType::VarChar, "Surname"},
-        {types::ContentType::VarChar, "Description"}
-    };
-
-    Row row(fmt, { 
-        new types::Int(432), 
-        new types::Float(1.23),
-        new types::Char(14, "Aram"),
-        new types::VarChar("Khachaturian"),
-        new types::VarChar("Kompozytor radziecki")
-    });
-    
+void Test::rowTest()
+{        
     std::cout << "Wartosci:" << std::endl;
     for (auto p: row.variable())
     {
@@ -126,7 +147,7 @@ void row_test()
     row["Name"] = nullptr;
     char buffer[PAGE_SIZE] = { 0 };
     RowWriter rw;
-    std::cout << "Przewidywany rozmiar: " << rw.length(row) << std::endl;
+    std::cout << "Przewidywany rozmiar: " << rw.size(row) << std::endl;
     rw.write(buffer, row);
     std::cout << "Zrzut pamieci zapisanej przez RowWritera:" << std::endl;
     std::cout << format_bytes(buffer, 300) << std::endl;
@@ -137,13 +158,42 @@ void row_test()
 }
 
 
+void Test::dataPageTest()
+{
+    DataPage page;
+    page.insertRow(row, 0);
+    setRow(321, 6.66f, "David", "Hilbert", "Matematyk niemiecki");
+    page.insertRow(row, 0);
+    setRow(7788, 1.432f, "Sergiusz", "Prokofiew", 
+        "Radziecki kompozytor klasyczny");
+    page.insertRow(row, 2);
+    
+    std::cout << "Calosc strony:" << std::endl;
+    std::cout << format_bytes(page.page().buffer(), PAGE_SIZE) << std::endl;
+    
+    std::cout << "Offset pierwszego: " << page.offset(0) << std::endl;
+    std::cout << "Offset drugiego: " << page.offset(1) << std::endl;
+    std::cout << "Offset trzeciego: " << page.offset(2) << std::endl;
+    
+    std::cout << "Test odczytu: " << std::endl;
+    RowReader reader;
+    for (int i = 0; i < page.rowCount(); ++ i)
+    {
+        std::cout << "Wiersz nr " << i << std::endl;
+        std::cout << *reader.read(page.rowData(i), fmt) << std::endl;
+    }
+}
+
+
 int main()
 {
     try
     {     
-        database_creation();
-        row_format_test();
-        row_test();
+        Test test;
+        test.databaseCreationTest();
+        test.rowFormatTest();
+        test.rowTest();
+        test.dataPageTest();
         /*        
         Row row(fmt, { new types::Int(432), new types::Float(1.23),
             new types::VarChar("Spadaj"), new types::VarChar("Cieciu") });

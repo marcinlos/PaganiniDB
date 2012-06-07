@@ -19,7 +19,7 @@ void PageHeader::fill(page_number number, PageType type)
     prev = next = NULL_PAGE;
     rows = 0;
     free_space = DATA_SIZE;
-    free_offset = DATA_OFFSET;
+    free_offset = 0; // od poczatku sekcji danych
     set_page_type(flags, type);
 }
 

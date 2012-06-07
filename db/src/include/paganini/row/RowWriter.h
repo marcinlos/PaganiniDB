@@ -16,7 +16,7 @@
 #define __PAGANINI_ROW_ROW_WRITER_H__
 
 #include <paganini/row/Row.h>
-#include <paganini/util/bits.h>
+#include <paganini/util/Bitmap.h>
 #include <paganini/row/FieldFactory.h>
 
 
@@ -34,7 +34,7 @@ public:
     size16 write(raw_data buffer, const Row& row);
     
     // Oblicza ilosc miejsca potrzebna do zapisania podanego wiersza
-    size16 length(const Row& row) const;
+    size16 size(const Row& row) const;
     
 private:
     FieldFactory& factory;

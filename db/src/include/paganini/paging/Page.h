@@ -56,12 +56,7 @@ static const size32 PAGES_PER_UV = 8;
 // Klasa strony - niewiele ponad bufor. Udostepnia sekcje naglowka i danych, 
 // jak rowniez metody pomocnicze get() i create().
 class Page
-{
-private:
-    PageHeader& header_;
-    raw_data data_;
-    char buffer_[PAGE_SIZE];
-    
+{    
 public:
     // Konstruktor uzupelniajacy podstawowe informacje naglowka strony
     explicit Page(page_number number = NULL_PAGE, 
@@ -71,59 +66,99 @@ public:
     void clearData();
     
     // Zwraca naglowek strony
-    PageHeader& header()
-    {
-        return header_;
-    }
-    
-    const PageHeader& header() const
-    {
-        return header_;
-    }
+    inline PageHeader& header();
+    inline const PageHeader& header() const;
     
     // Zwraca obszar danych strony
-    raw_data data()
-    {
-        return data_;
-    }
+    inline raw_data data();
+    inline const_raw_data data() const;
     
-    const_raw_data data() const
-    {
-        return data_;
-    }
+    // Zwraca wskaznik za obszar danych strony
+    inline raw_data back();
+    inline const_raw_data back() const;
     
     // Zwraca calosc pamieci strony (naglowek + obszar danych)
-    raw_data buffer()
-    {
-        return buffer_;
-    }
-    
-    const_raw_data buffer() const
-    {
-        return buffer_;
-    }
+    inline raw_data buffer();
+    inline const_raw_data buffer() const;
     
     // Pomocnicze do uzywania sekcji danych
     template <typename T>
-    T* get()
-    {
-        return reinterpret_cast<T*>(data_);
-    }
+    inline T* get();
 
     template <typename T>
-    const T* get() const
-    {
-        return reinterpret_cast<const T*>(data_);
-    }
+    inline const T* get() const;
     
     // Umozliwia konstrukcje obiektu w sekcji danych
     template <typename T, typename... Args>
-    T* create(Args&&... args)
-    {
-        return new (data_) T(std::forward<Args>(args)...);
-    }
+    inline T* create(Args&&... args);
+    
+private:
+    PageHeader& header_;
+    raw_data data_;
+    char buffer_[PAGE_SIZE];
 };
 
+
+// Implementacja funkcji inline
+
+// Zwraca naglowek strony
+PageHeader& Page::header()
+{
+    return header_;
+}
+
+const PageHeader& Page::header() const
+{
+    return header_;
+}
+
+raw_data Page::data()
+{
+    return data_;
+}
+
+const_raw_data Page::data() const
+{
+    return data_;
+}
+
+raw_data Page::back()
+{
+    return buffer_ + sizeof(buffer_);
+}
+
+const_raw_data Page::back() const
+{
+    return buffer_ + sizeof(buffer_);
+}
+
+raw_data Page::buffer()
+{
+    return buffer_;
+}
+
+const_raw_data Page::buffer() const
+{
+    return buffer_;
+}
+
+template <typename T>
+T* Page::get()
+{
+    return reinterpret_cast<T*>(data_);
+}
+
+template <typename T>
+const T* Page::get() const
+{
+    return reinterpret_cast<const T*>(data_);
+}
+
+template <typename T, typename... Args>
+T* Page::create(Args&&... args)
+{
+    return new (data_) T(std::forward<Args>(args)...);
+}
 
 
 }

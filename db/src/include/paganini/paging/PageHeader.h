@@ -28,7 +28,7 @@ struct PageHeader
     // Numery stron: kolejnej i poprzedniej w przypadku, gdy konieczne
     // jest laczenie ich w liste
     page_number next;
-    page_number prev;    
+    page_number prev;
     
     // Obiekt bazy danych bedacy wlascicielem strony
     object_id owner;
@@ -39,7 +39,7 @@ struct PageHeader
     // Ilosc wolnego miejsca na stronie
     size16 free_space;
     
-    // Poczatek wolnego miejsca na stronie
+    // Poczatek wolnego miejsca na stronie (liczona od poczatku sekcji danych)
     page_offset free_offset;
     
     // Flagi strony (BITS_PER_PAGE_TYPE najmlodszych bitow to typ strony)

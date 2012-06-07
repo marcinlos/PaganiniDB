@@ -5,6 +5,7 @@
 #ifndef __PAGANINI_ROW_ROW_READER_H__
 #define __PAGANINI_ROW_ROW_READER_H__
 
+#include <paganini/util/Bitmap.h>
 #include <paganini/row/Row.h>
 #include <paganini/row/FieldFactory.h>
 

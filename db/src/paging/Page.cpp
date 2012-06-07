@@ -2,10 +2,12 @@
 #include <paganini/paging/Page.h>
 #include <cstring>
 #include <string>
+#include <algorithm>
 using std::string;
 
 namespace paganini
 {
+
 
 Page::Page(page_number number, PageType type):
     header_(*(new (buffer_) PageHeader(number, type))),
@@ -13,9 +15,11 @@ Page::Page(page_number number, PageType type):
 {
 }
 
+
 void Page::clearData()
 {
-    memset(data_, 0, DATA_SIZE);
+    std::fill_n(data_, DATA_SIZE, 0);
 }
+
 
 }
