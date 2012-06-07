@@ -107,30 +107,36 @@ PageHeader& Page::header()
     return header_;
 }
 
+
 const PageHeader& Page::header() const
 {
     return header_;
 }
+
 
 raw_data Page::data()
 {
     return data_;
 }
 
+
 const_raw_data Page::data() const
 {
     return data_;
 }
+
 
 raw_data Page::back()
 {
     return buffer_ + sizeof(buffer_);
 }
 
+
 const_raw_data Page::back() const
 {
     return buffer_ + sizeof(buffer_);
 }
+
 
 raw_data Page::buffer()
 {
@@ -142,17 +148,20 @@ const_raw_data Page::buffer() const
     return buffer_;
 }
 
+
 template <typename T>
 T* Page::get()
 {
     return reinterpret_cast<T*>(data_);
 }
 
+
 template <typename T>
 const T* Page::get() const
 {
     return reinterpret_cast<const T*>(data_);
 }
+
 
 template <typename T, typename... Args>
 T* Page::create(Args&&... args)

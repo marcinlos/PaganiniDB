@@ -15,4 +15,6 @@ librow_la_include_HEADERS = ../include/paganini/row/datatypes.h \
                             ../include/paganini/row/Row.h \
                             ../include/paganini/row/FieldFactory.h \
                             ../include/paganini/row/RowWriter.h \
-                            ../include/paganini/row/RowReader.h
+                            ../include/paganini/row/RowReader.h \
+                            ../include/paganini/row/Comparator.h \
+                            ../include/paganini/row/TypeMapping.h

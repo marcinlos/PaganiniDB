@@ -9,6 +9,7 @@
 #include <paganini/row/RowReader.h>
 #include <paganini/row/FieldFactory.h>
 #include <paganini/paging/DataPage.h>
+#include <paganini/row/Comparator.h>
 #include <cstdio>
 #include <iostream>
 #include <iomanip>
@@ -62,6 +63,7 @@ public:
     void rowFormatTest();
     void rowTest();
     void dataPageTest();
+    void comparatorTest();
     
 private:
     RowFormat fmt;
@@ -160,7 +162,7 @@ void Test::rowTest()
 
 void Test::dataPageTest()
 {
-    DataPage page;
+    DataPage<Row, RowWriter> page;
     page.insertRow(row, 0);
     setRow(321, 6.66f, "David", "Hilbert", "Matematyk niemiecki");
     page.insertRow(row, 0);
@@ -185,6 +187,23 @@ void Test::dataPageTest()
 }
 
 
+void Test::comparatorTest()
+{
+    std::cout << "Test comparatora:" << std::endl;
+    
+    typedef std::unique_ptr<Comparator<types::Data>> CmpPtr;
+    typedef std::unique_ptr<types::Data> DataPtr;
+    
+    CmpPtr comparator(new DataComparator<types::ContentType::VarChar,
+        DynamicCastPolicy>);
+    DataPtr data1(new types::VarChar("Albin")), 
+        data2(new types::VarChar("Adelajda"));
+    std::cout << data1->toString() 
+        << ((*comparator)(*data1, *data2) ? " < " : " !< ") 
+        << data2->toString() << std::endl;
+}
+
+
 int main()
 {
     try
@@ -194,6 +213,7 @@ int main()
         test.rowFormatTest();
         test.rowTest();
         test.dataPageTest();
+        test.comparatorTest();
         /*        
         Row row(fmt, { new types::Int(432), new types::Float(1.23),
             new types::VarChar("Spadaj"), new types::VarChar("Cieciu") });

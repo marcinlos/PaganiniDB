@@ -48,6 +48,8 @@ enum class ContentType
     VarChar = VARIABLE_MASK
 };
 
+
+
 inline std::ostream& operator << (std::ostream& os, ContentType content)
 {
     const char* str;
@@ -105,7 +107,9 @@ inline bool is_variable_size(ContentType type)
 }
 
 
-// Abstrakcyjna klasa bazowa dla typow danych
+// Abstrakcyjna klasa bazowa dla typow danych. Wszystkie typy dziedziczace
+// z niej powinny udostepniac rowniez metode value zwracajaca wartosc
+// przechowywana.
 class Data
 {  
 public:
@@ -163,6 +167,8 @@ public:
     
     FieldType type() const { return { V, FieldType::NON_APPLICABLE }; }
     
+    Value value() const { return val; }
+    
     string toString() const
     { 
         return util::format("{}", val); 
@@ -201,9 +207,12 @@ public:
     }
     
     size16 size() const { return max_length; }
+    
     FieldType type() const { return { ContentType::Char, max_length }; }
     
-    string toString() const { return string(val.begin(), val.end()); }
+    string value() const { return string(val.begin(), val.end()); }
+    
+    string toString() const { return value(); }
 };
 
 // Typ tekstowy bez ograniczenia dlugosci
@@ -236,6 +245,8 @@ public:
     { 
         return { ContentType::VarChar, FieldType::NON_APPLICABLE }; 
     }
+    
+    const string& value() const { return val; }
     
     string toString() const { return val; }
 };
