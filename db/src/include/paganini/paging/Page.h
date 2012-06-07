@@ -70,6 +70,7 @@ public:
     // Wypelnia sekcje danych zerami
     void clearData();
     
+    // Zwraca naglowek strony
     PageHeader& header()
     {
         return header_;
@@ -80,6 +81,7 @@ public:
         return header_;
     }
     
+    // Zwraca obszar danych strony
     raw_data data()
     {
         return data_;
@@ -90,6 +92,7 @@ public:
         return data_;
     }
     
+    // Zwraca calosc pamieci strony (naglowek + obszar danych)
     raw_data buffer()
     {
         return buffer_;

@@ -32,13 +32,16 @@ string format_bytes(raw_data data, size16 len, size16 in_line = 16)
         unsigned char* d = reinterpret_cast<unsigned char*>(data + i * in_line);
         for (int j = 0; j < in_line; ++ j)
         {
-            ss << hex_digit((d[j] & 0xf0) >> 8);
+            ss << hex_digit((d[j] & 0xf0) >> 4);
             ss << hex_digit(d[j] & 0x0f);
-            ss << ' '; 
-            if ((j + 1) % 2 == 0)
-                ss << ' ';
+            if (j != in_line - 1)
+            {
+                ss << ' '; 
+                if ((j + 1) % 2 == 0)
+                    ss << ' ';
+            }
         }
-        ss << "| ";
+        ss << " | ";
         for (int j = 0; j < in_line; ++ j)
         {
             ss << make_ascii(d[j]);
@@ -67,12 +70,9 @@ void row_format_test()
         {types::ContentType::VarChar, "Surname"},
         {types::ContentType::VarChar, "Description"}
     };
-    //std::cout << "Po nazwie: Name ma rozmiar " << fmt["Name"].size << std::endl;
-    std::cout << "Wszystkie kolumny:" << std::endl;
-    /*for (const Column& c: fmt)
-    {
-        std::cout << "- " << c.name << "(" << c.size << ")" << std::endl;
-    }*/
+    std::cout << "Nasz wiersz:" << std::endl;
+    std::cout << fmt << std::endl;
+
     std::cout << "Pola o zmiennym rozmiarze:" << std::endl;
     auto view = fmt.variable();
     for (auto it = view.begin(); it != view.end(); ++ it)
@@ -85,8 +85,6 @@ void row_format_test()
     {
         std::cout << "- " << view2[i].name << std::endl;
     }
-    //std::cout << "Laczna dlugosc tych o stalym rozmiarze: "
-    //    << fmt.totalFixedSize() << std::endl;
 }
 
 void row_test()
@@ -113,11 +111,6 @@ void row_test()
     {
         std::cout << p->toString() << std::endl;
     }
-    /*
-    std::unique_ptr<types::Data> ddata = 
-        FieldMetadata::getInstance().create(types::FieldType::Float);
-    printf("float = %s\n", ddata->toString().c_str());
-    */
     
     std::cout << "Pole 'Name': " << row["Name"]->toString() << std::endl;
     row["Surname"] = new types::VarChar("Blabla");
@@ -132,9 +125,11 @@ void row_test()
     char buffer[PAGE_SIZE] = { 0 };
     RowWriter rw;
     rw.write(buffer, row);
+    std::cout << "Zrzut pamieci zapisanej przez RowWritera:" << std::endl;
     std::cout << format_bytes(buffer, 300) << std::endl;
     
     RowReader rr;
+    std::cout << "Wiersz odczytany z powrotem przez RowReadera:" << std::endl;
     std::cout << *rr.read(buffer, fmt);
 }
 

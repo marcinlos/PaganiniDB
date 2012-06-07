@@ -5,6 +5,7 @@
 #ifndef __PAGANINI_UTIL_BITS_H__
 #define __PAGANINI_UTIL_BITS_H__
 
+#include <paganini/paging/types.h>
 #include <cstdint>
 #include <vector>
 

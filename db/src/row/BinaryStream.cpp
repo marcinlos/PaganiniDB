@@ -6,31 +6,31 @@ namespace paganini
 
 
 BinaryStream::BinaryStream(raw_data buffer, size16 offset): 
-    buffer(buffer), offset(offset)
+    buffer_(buffer), offset_(offset)
 {
 }
 
 
 page_offset BinaryStream::getOffset() const
 {
-    return offset;
+    return offset_;
 }
 
 void BinaryStream::setOffset(page_offset offset)
 {
-    this->offset = offset;
+    offset_ = offset;
 }
 
 
 void BinaryStream::skip(page_offset offset)
 {
-    this->offset += offset;
+    offset_ += offset;
 }
 
 
 raw_data BinaryStream::getBuffer()
 {
-    return buffer + offset;
+    return buffer_ + offset_;
 }
 
 

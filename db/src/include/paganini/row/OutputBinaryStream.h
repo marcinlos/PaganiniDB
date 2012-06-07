@@ -50,13 +50,14 @@ public:
     size16 writeData(const_raw_data data, size16 length);
 };
 
-// Specjalizacje dla double i float
+// Specjalizacje dla typow zmiennoprzecinkowych, by zagwarantowac przenosnosc
+
 template <>
 size16 OutputBinaryStream::write<float>(raw_data buffer, const float& value);
-/*
+
 template <>
 size16 OutputBinaryStream::write<double>(raw_data buffer, const double& value);
-*/
+
 
 // Implementacje
 
@@ -84,8 +85,8 @@ size16 OutputBinaryStream::writeRange(raw_data buffer, Iter begin, Iter end)
 template <typename T>
 size16 OutputBinaryStream::write(T value)
 {
-    size16 written = OutputBinaryStream::write(buffer + offset, value);
-    offset += written;
+    size16 written = OutputBinaryStream::write(getBuffer(), value);
+    skip(written);
     return written;
 }
 
@@ -93,10 +94,9 @@ size16 OutputBinaryStream::write(T value)
 template <typename Iter>
 size16 OutputBinaryStream::writeRange(Iter begin, Iter end)
 {
-    size16 length = OutputBinaryStream::writeRange(buffer + offset, 
-        begin, end);
-    offset += length;
-    return length;
+    size16 written = OutputBinaryStream::writeRange(getBuffer(), begin, end);
+    skip(written);
+    return written;
 }
 
 

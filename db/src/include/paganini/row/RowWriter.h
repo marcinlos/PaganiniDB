@@ -99,6 +99,7 @@ public:
             if (field != nullptr)
                 field->writeTo(stream);
         }
+        return stream.getOffset();
     }
 };
 

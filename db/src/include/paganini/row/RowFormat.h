@@ -58,7 +58,8 @@ inline std::ostream& operator << (std::ostream& os, const Column& column)
 class RowFormat
 {    
 public:
-
+    // Typ kolekcji kolumn zwracanej przez funkcje udostepniajace
+    // widok na podzbior calosci definicji wiersza
     typedef util::IndexedView<std::vector<int>::const_iterator,
         std::vector<Column>::const_iterator> ColumnVector;
         

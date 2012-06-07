@@ -57,6 +57,15 @@ public:
     size16 readData(raw_data output, size16 length);
 };
 
+// Specjalizacje dla typow zmiennoprzecinkowych, by zagwarantowac przenosnosc 
+
+template <>
+size16 InputBinaryStream::read<float>(const_raw_data buffer, float* output);
+
+template<>
+size16 InputBinaryStream::read<double>(const_raw_data buffer, double* output);
+
+
 // Implementacje
 
 template <typename T>
@@ -89,8 +98,8 @@ size16 InputBinaryStream::readRange(const_raw_data buffer, OutputIter out,
 template <typename T>
 size16 InputBinaryStream::read(T* output)
 {
-    size16 taken = InputBinaryStream::read(buffer + offset, output);
-    offset += taken;
+    size16 taken = InputBinaryStream::read(getBuffer(), output);
+    skip(taken);
     return taken;
 } 
 
@@ -98,14 +107,10 @@ size16 InputBinaryStream::read(T* output)
 template <typename OutputIter>
 size16 InputBinaryStream::readRange(OutputIter out, size16 count)
 {
-    size16 length = InputBinaryStream::readRange(buffer + offset, out, count);
-    offset += length;
-    return length;
+    size16 taken = InputBinaryStream::readRange(getBuffer(), out, count);
+    skip(taken);
+    return taken;
 }
-    
-
-template <>
-size16 InputBinaryStream::read<float>(const_raw_data buffer, float* output);
 
 
 }

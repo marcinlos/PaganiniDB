@@ -34,8 +34,8 @@ public:
     raw_data getBuffer();
     
 protected:
-    raw_data buffer;
-    page_offset offset;
+    raw_data buffer_;
+    page_offset offset_;
 };
 
 }
