@@ -13,6 +13,7 @@ Page::Page(page_number number, PageType type):
     header_(*(new (buffer_) PageHeader(number, type))),
     data_(buffer_ + HEADER_SIZE)
 {
+    // clearData();
 }
 
 

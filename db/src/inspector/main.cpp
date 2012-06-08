@@ -2,12 +2,15 @@
 #include <paganini/error_msg.h>
 #include <paganini/Error.h>
 #include <paganini/paging/PageManager.h>
+#include <paganini/paging/FilePersistenceManager.h>
+#include <paganini/paging/DummyLocker.h>
 #include "operations.h"
 #include "cmd.h"
 #include <iostream>
 using namespace paganini;
 
 CommandExecutor executor;
+PageManager<FilePersistenceManager<DummyLocker>>* manager;
 
 void input_loop()
 {
@@ -33,14 +36,15 @@ int main(int argc, char** argv)
         fatal_usr("Uzycie: insp nazwa_pliku");
     try
     {
-        PageManager& manager = PageManager::getInstance();
-        manager.openFile(argv[1]);
+        // PageManager& manager = PageManager::getInstance();
+        manager = new PageManager<FilePersistenceManager<DummyLocker>>;
+        manager->openFile(argv[1]);
         
         prepare();
         std::cout << "Uzyj 'help' by zobaczyc liste komend" << std::endl;
         input_loop();
         
-        manager.closeFile();
+        manager->closeFile();
     }
     catch (paganini::Exception& e)
     {

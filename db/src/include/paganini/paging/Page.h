@@ -36,7 +36,7 @@ inline void set_page_type(page_flags& flags, PageType type)
 }
 
 // Wielkosc strony jest stala
-static const int PAGE_LOG_SIZE = 13;
+static const int PAGE_LOG_SIZE = 10;//13;
 static const int PAGE_SIZE = (1 << PAGE_LOG_SIZE);
 
 // Offset Row Offset Array (ROA) - jest na koncu strony, indeksy ida

@@ -1,5 +1,7 @@
 #include "config.h"
 #include <paganini/paging/PageManager.h>
+#include <paganini/paging/FilePersistenceManager.h>
+#include <paganini/paging/DummyLocker.h>
 #include <paganini/paging/DatabaseHeader.h>
 #include <paganini/error_msg.h>
 #include <paganini/Error.h>
@@ -10,7 +12,7 @@
 
 using namespace paganini;
 
-PageManager& manager = PageManager::getInstance();
+extern PageManager<FilePersistenceManager<DummyLocker>>* manager;
 
 // Wypisywanie naglowka strony
 
@@ -92,7 +94,7 @@ void print_page_header(const vector<string>& args)
         return;
     }
     Page page;
-    try { manager.readPage(page_number, &page); }
+    try { manager->readPage(page_number, &page); }
     catch (Exception& e)
     {
         printf("%s\n%s\n", e.what(), e.getCodeMessage());
@@ -121,7 +123,7 @@ void print_db_header(const vector<string>& args)
 {
     Page page;
     DatabaseHeader* dbh = page.get<DatabaseHeader>();
-    try { manager.readPage(HEADER_PAGE_NUMBER, &page); }
+    try { manager->readPage(HEADER_PAGE_NUMBER, &page); }
     catch (Exception& e)
     {
         printf("%s\n%s\n", e.what(), e.getCodeMessage());
@@ -175,7 +177,7 @@ void print_uv_content(const vector<string>& args)
         return;
     }
     Page page;
-    try { manager.readPage(page_number, &page); }
+    try { manager->readPage(page_number, &page); }
     catch (Exception& e)
     {
         printf("%s\n%s\n", e.what(), e.getCodeMessage());

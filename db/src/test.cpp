@@ -1,6 +1,8 @@
 #include "config.h"
 #include <paganini/paging/Page.h>
 #include <paganini/paging/PageManager.h>
+#include <paganini/paging/FilePersistenceManager.h>
+#include <paganini/paging/DummyLocker.h>
 #include <paganini/Error.h>
 #include <paganini/row/datatypes.h>
 #include <paganini/row/RowFormat.h>
@@ -10,6 +12,7 @@
 #include <paganini/row/FieldFactory.h>
 #include <paganini/paging/DataPage.h>
 #include <paganini/row/Comparator.h>
+#include <paganini/indexing/ComparatorFactory.h>
 #include <cstdio>
 #include <iostream>
 #include <iomanip>
@@ -93,7 +96,7 @@ Test::Test():
 
 void Test::databaseCreationTest()
 {
-    PageManager& manager = PageManager::getInstance();
+    PageManager<FilePersistenceManager<DummyLocker>> manager;// = PageManager::getInstance();
     manager.createFile("db");
     manager.openFile("db");
     page_number pn = manager.allocPage();
@@ -170,9 +173,9 @@ void Test::dataPageTest()
         "Radziecki kompozytor klasyczny");
     page.insert(row, 2);
     
-    //std::cout << "Calosc strony:" << std::endl;
-    //std::cout << format_bytes(page.page().buffer(), PAGE_SIZE) << std::endl;
-    page.erase(1);
+    std::cout << "Calosc strony:" << std::endl;
+    std::cout << format_bytes(page.page().buffer(), PAGE_SIZE) << std::endl;
+    //page.erase(1);
     std::cout << "Offset wolnego: " << page.header().free_offset << std::endl;
     
     std::cout << "Test odczytu: " << std::endl;
@@ -188,15 +191,15 @@ void Test::dataPageTest()
 
 void Test::comparatorTest()
 {
-    std::cout << "Test comparatora:" << std::endl;
+    using namespace types;
     
-    typedef std::unique_ptr<Comparator<types::Data>> CmpPtr;
+    std::cout << "Test comparatora:" << std::endl;
+    ComparatorFactory& factory = ComparatorFactory::getInstance();
+    typedef Comparator<types::Data>* CmpPtr;
     typedef std::unique_ptr<types::Data> DataPtr;
     
-    CmpPtr comparator(new DataComparator<types::ContentType::VarChar,
-        DynamicCastPolicy>);
-    DataPtr data1(new types::VarChar("Adelajda")), 
-        data2(new types::VarChar("Albin"));
+    CmpPtr comparator(factory.get(ContentType::VarChar));
+    DataPtr data1(new VarChar("Adelajda")), data2(new VarChar("Albin"));
     std::cout << data1->toString() 
         << ((*comparator)(*data1, *data2) ? " < " : " !< ") 
         << data2->toString() << std::endl;

@@ -30,6 +30,9 @@
 #include <algorithm>
 #include <stdexcept>
 
+
+#include <iostream>
+
 namespace paganini
 {
 
@@ -230,7 +233,9 @@ void DataPage<RowType, FormatInfo, Reader,
     Writer>::insertOffset_(row_number position, page_offset offset)
 {
     for (int i = header_.rows - 1; i >= position; -- i)
-        offset_array_[i + i] = offset_array_[i];
+    {
+        offset_array_[i + 1] = offset_array_[i];
+    }
         
     offset_array_[position] = offset;
     

@@ -45,9 +45,10 @@ private:
     };
 
     std::unordered_map<types::ContentType, FieldMetadata> types;
-    friend class util::Singleton<FieldFactory>;
     
     FieldFactory();
+    
+    friend class util::Singleton<FieldFactory>;
 };
 
 

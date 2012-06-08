@@ -1,4 +1,4 @@
-SUBDIRS = error_msg paging row io
+SUBDIRS = error_msg paging row io indexing
 
 AM_CPPFLAGS = -I include
 
@@ -7,7 +7,8 @@ libpaganini_la_SOURCES =
 libpaganini_la_LIBADD = error_msg/liberrormsg.la \
                         paging/libpaging.la \
                         row/librow.la \
-                        io/libio.la
+                        io/libio.la \
+                        indexing/libindexing.la
 
 libpaganini_la_includedir = ${includedir}/paganini
 libpaganini_la_include_HEADERS = include/paganini/paganini.h
