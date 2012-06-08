@@ -2,26 +2,43 @@
     Klasa reprezentujaca pojedyncza strone z szeroko pojetymi wierszami.
     Moga to byc konkretne wiersze z tabel, indeksy badz cokolwiek innego.
     
-    RowType to typ przechowywanych wartosci. Writer natomiast to klasa zdolna
-    zapisywac obiekty typu RowType. Udostepniac powinna nastepujace metody:
+    RowType to typ przechowywanych wartosci.
+    
+    FormatInfo to dodatkowe informacje przekazywane w celu umozliwienia
+    readerowi odczytania zapisanych przez writera informacji. Reader/writer
+    dzialaja ogolnie w oparciu np. o definicje tabeli, stad konieczne jest
+    dostarczenie tego typu informacji.
+    
+    Writer to klasa zdolna zapisywac obiekty typu RowType. 
+    Udostepniac powinna nastepujace metody:
     - write(raw_data buffer, const RowType& row) - zapisuje do podanej pamieci
     - size(const RowType& row) - zwraca rozmiar wiersza po zapisaniu write-m
+    
+    Reader to klasa zdolna odczytac obiekty typu RowType. Udostepnia
+    nastepujace metode
+        Reader::ReturnType read(raw_data buffer, const RowFormat& format)   
 */
 #ifndef __PAGANINI_PAGING_DATA_PAGE_H__
 #define __PAGANINI_PAGING_DATA_PAGE_H__
 
 #include <paganini/paging/types.h>
-#include <paganini/util/ReverseArray.h>
 #include <paganini/paging/Page.h>
 #include <paganini/row/Row.h>
 #include <paganini/util/format.h>
 #include <memory>
+#include <iterator>
+#include <algorithm>
 #include <stdexcept>
 
 namespace paganini
 {
 
-template <typename RowType, typename Writer>
+template <
+    typename RowType, 
+    typename FormatInfo,
+    class Reader, 
+    class Writer
+    >
 class DataPage
 {    
 public:
@@ -51,10 +68,10 @@ public:
     
     // Zapisuje wiersz tak, aby byl widziany jako wiersz o indeksie
     // number w tej stronie.
-    void insertRow(const RowType& row, row_number number);
+    void insert(const RowType& row, row_number number);
     
     // Usuwa wiersz o podanym indeksie
-    void removeRow(row_number number);
+    void erase(row_number number);
     
     // Zwraca offset wiersza o podanym numerze. Wartosci te nie musza byc
     // monotoniczne, ulozenie danych jest dowolne.
@@ -64,18 +81,22 @@ public:
     inline raw_data rowData(row_number number);
     inline const_raw_data rowData(row_number number) const;
     
+    // Zwraca obiekt reprezetujacy wiersz o podanym numerze
+    typename Reader::ReturnType row(row_number number, 
+        const FormatInfo& format) const;
+    
 private:
     std::shared_ptr<Page> page_;
     PageHeader& header_;
     raw_data data_;    
-    util::ReverseArray<page_offset*> offset_array_;
+    std::reverse_iterator<page_offset*> offset_array_;
     
     void insertOffset_(row_number position, page_offset offset);
 };
 
 
-template <typename RowType, typename Writer>
-DataPage<RowType, Writer>::DataPage(): 
+template <typename RowType, typename FormatInfo, class Reader, class Writer>
+DataPage<RowType, FormatInfo, Reader, Writer>::DataPage(): 
     page_(new Page()), 
     header_(page_->header()), 
     data_(page_->data()),
@@ -84,8 +105,9 @@ DataPage<RowType, Writer>::DataPage():
 }
 
 
-template <typename RowType, typename Writer>
-DataPage<RowType, Writer>::DataPage(std::shared_ptr<Page> page): 
+template <typename RowType, typename FormatInfo, class Reader, class Writer>
+DataPage<RowType, FormatInfo, Reader, 
+    Writer>::DataPage(std::shared_ptr<Page> page): 
     page_(page), 
     header_(page_->header()), 
     data_(page_->data()),
@@ -94,8 +116,8 @@ DataPage<RowType, Writer>::DataPage(std::shared_ptr<Page> page):
 }
 
 
-template <typename RowType, typename Writer>
-DataPage<RowType, Writer>::DataPage(const DataPage& other): 
+template <typename RowType, typename FormatInfo, class Reader, class Writer>
+DataPage<RowType, FormatInfo, Reader, Writer>::DataPage(const DataPage& other): 
     page_(other.page_),
     header_(page_->header()),
     data_(page_->data()),
@@ -104,43 +126,44 @@ DataPage<RowType, Writer>::DataPage(const DataPage& other):
 }
 
 
-template <typename RowType, typename Writer>
-PageHeader& DataPage<RowType, Writer>::header()
+template <typename RowType, typename FormatInfo, class Reader, class Writer>
+PageHeader& DataPage<RowType, FormatInfo, Reader, Writer>::header()
 {
     return header_;
 }
 
 
-template <typename RowType, typename Writer>
-const PageHeader& DataPage<RowType, Writer>::header() const
+template <typename RowType, typename FormatInfo, class Reader, class Writer>
+const PageHeader& DataPage<RowType, FormatInfo, Reader, Writer>::header() const
 {
     return header_;
 }
 
 
-template <typename RowType, typename Writer>
-Page& DataPage<RowType, Writer>::page()
+template <typename RowType, typename FormatInfo, class Reader, class Writer>
+Page& DataPage<RowType, FormatInfo, Reader, Writer>::page()
 {
     return *(page_.get());
 }
 
 
-template <typename RowType, typename Writer>
-const Page& DataPage<RowType, Writer>::page() const
+template <typename RowType, typename FormatInfo, class Reader, class Writer>
+const Page& DataPage<RowType, FormatInfo, Reader, Writer>::page() const
 {
     return *(page_.get());
 }
 
 
-template <typename RowType, typename Writer>
-size16 DataPage<RowType, Writer>::rowCount() const
+template <typename RowType, typename FormatInfo, class Reader, class Writer>
+size16 DataPage<RowType, FormatInfo, Reader, Writer>::rowCount() const
 {
     return header_.rows;
 }
 
 
-template <typename RowType, typename Writer>
-page_offset DataPage<RowType, Writer>::offset(row_number number) const
+template <typename RowType, typename FormatInfo, class Reader, class Writer>
+page_offset DataPage<RowType, FormatInfo, Reader, 
+    Writer>::offset(row_number number) const
 {
     if (number >= 0 && number < header_.rows)
         return offset_array_[number];
@@ -150,22 +173,49 @@ page_offset DataPage<RowType, Writer>::offset(row_number number) const
 }
 
 
-template <typename RowType, typename Writer>
-raw_data DataPage<RowType, Writer>::rowData(row_number number)
+template <typename RowType, typename FormatInfo, class Reader, class Writer>
+raw_data DataPage<RowType, FormatInfo, Reader, 
+    Writer>::rowData(row_number number)
 {
-    return data_ + offset(number);
+    if (number >= 0 && number < header_.rows)
+        return data_ + offset(number);
+    else 
+        throw std::logic_error(util::format("Row {} does not exist; {} rows "
+            "are available on page", number, header_.rows)); 
 }
 
 
-template <typename RowType, typename Writer>
-const_raw_data DataPage<RowType, Writer>::rowData(row_number number) const
+template <typename RowType, typename FormatInfo, class Reader, class Writer>
+const_raw_data DataPage<RowType, FormatInfo, Reader, 
+    Writer>::rowData(row_number number) const
 {
-    return data_ + offset(number);
+    if (number >= 0 && number < header_.rows)
+        return data_ + offset(number);
+    else 
+        throw std::logic_error(util::format("Row {} does not exist; {} rows "
+            "are available on page", number, header_.rows)); 
 }
 
 
-template <typename RowType, typename Writer>
-bool DataPage<RowType, Writer>::canFit(const RowType& row) const
+template <typename RowType, typename FormatInfo, class Reader, class Writer>
+typename Reader::ReturnType DataPage<RowType, FormatInfo, Reader,
+    Writer>::row(row_number number, const FormatInfo& format) const
+{
+    if (number >= 0 && number < header_.rows)
+    {
+        raw_data row_data = data_ + offset(number);
+        Reader reader;
+        return reader.read(row_data, format);
+    }
+    else 
+        throw std::logic_error(util::format("Row {} does not exist; {} rows "
+            "are available on page", number, header_.rows)); 
+}
+
+
+template <typename RowType, typename FormatInfo, class Reader, class Writer>
+bool DataPage<RowType, FormatInfo, Reader, 
+    Writer>::canFit(const RowType& row) const
 {
     Writer writer;
     size16 free = header_.free_space;
@@ -175,9 +225,9 @@ bool DataPage<RowType, Writer>::canFit(const RowType& row) const
 }
 
 
-template <typename RowType, typename Writer>
-void DataPage<RowType, Writer>::insertOffset_(row_number position, 
-    page_offset offset)
+template <typename RowType, typename FormatInfo, class Reader, class Writer>
+void DataPage<RowType, FormatInfo, Reader, 
+    Writer>::insertOffset_(row_number position, page_offset offset)
 {
     for (int i = header_.rows - 1; i >= position; -- i)
         offset_array_[i + i] = offset_array_[i];
@@ -189,9 +239,9 @@ void DataPage<RowType, Writer>::insertOffset_(row_number position,
 }
 
 
-template <typename RowType, typename Writer>
-void DataPage<RowType, Writer>::insertRow(const RowType& row, 
-    row_number position)
+template <typename RowType, typename FormatInfo, class Reader, class Writer>
+void DataPage<RowType, FormatInfo, Reader, 
+    Writer>::insert(const RowType& row, row_number position)
 {
     if (position >= 0 && position <= header_.rows)
     {
@@ -209,6 +259,48 @@ void DataPage<RowType, Writer>::insertRow(const RowType& row,
     }
     else 
         throw std::logic_error(util::format("Cannot insert on position {}, "
+            "{} rows are available", position, header_.rows));
+}
+
+
+template <typename RowType, typename FormatInfo, class Reader, class Writer>
+void DataPage<RowType, FormatInfo, Reader, 
+    Writer>::erase(row_number position)
+{
+    if (position >= 0 && position <= header_.rows)
+    {
+        page_offset offset = offset_array_[position];
+        
+        // Szukamy poczatku nastepnej porcji danych
+        page_offset end = header_.free_offset;
+        for (int i = 0; i < header_.rows; ++ i)
+        {
+            page_offset n = offset_array_[i];
+            if (n > offset && n < end)
+                end = n;
+        }
+        size16 size = end - offset;
+
+        // Przepisujemy wszystkie dane znad tych usuwanych
+        std::copy(data_ + end, data_ + header_.free_offset, data_ + offset);
+        
+        // Uaktualniamy tablice offsetow
+        for (int i = 0; i < header_.rows; ++ i)
+        {
+            if (offset_array_[i] > offset)
+                offset_array_[i] -= size;
+        }
+        // Usuwamy z niej wpis o wlasnie usunietym wierszu
+        for (int i = position; i < header_.rows - 1; ++ i)
+            offset_array_[i] = offset_array_[i + 1];
+        
+        // Uaktualniamy naglowek
+        header_.free_offset -= size;
+        header_.free_space += size;
+        -- header_.rows;
+    }
+    else 
+        throw std::logic_error(util::format("Cannot remove row {}, "
             "{} rows are available", position, header_.rows));
 }
 

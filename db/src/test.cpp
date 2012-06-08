@@ -162,27 +162,26 @@ void Test::rowTest()
 
 void Test::dataPageTest()
 {
-    DataPage<Row, RowWriter> page;
-    page.insertRow(row, 0);
+    DataPage<Row, RowFormat, RowReader, RowWriter> page;
+    page.insert(row, 0);
     setRow(321, 6.66f, "David", "Hilbert", "Matematyk niemiecki");
-    page.insertRow(row, 0);
+    page.insert(row, 0);
     setRow(7788, 1.432f, "Sergiusz", "Prokofiew", 
         "Radziecki kompozytor klasyczny");
-    page.insertRow(row, 2);
+    page.insert(row, 2);
     
-    std::cout << "Calosc strony:" << std::endl;
-    std::cout << format_bytes(page.page().buffer(), PAGE_SIZE) << std::endl;
-    
-    std::cout << "Offset pierwszego: " << page.offset(0) << std::endl;
-    std::cout << "Offset drugiego: " << page.offset(1) << std::endl;
-    std::cout << "Offset trzeciego: " << page.offset(2) << std::endl;
+    //std::cout << "Calosc strony:" << std::endl;
+    //std::cout << format_bytes(page.page().buffer(), PAGE_SIZE) << std::endl;
+    page.erase(1);
+    std::cout << "Offset wolnego: " << page.header().free_offset << std::endl;
     
     std::cout << "Test odczytu: " << std::endl;
     RowReader reader;
     for (int i = 0; i < page.rowCount(); ++ i)
     {
-        std::cout << "Wiersz nr " << i << std::endl;
-        std::cout << *reader.read(page.rowData(i), fmt) << std::endl;
+        std::cout << "Wiersz nr " << i << " (offset: " 
+            << page.offset(i) << ")" << std::endl;
+        std::cout << *page.row(i, fmt) << std::endl;
     }
 }
 
@@ -196,8 +195,8 @@ void Test::comparatorTest()
     
     CmpPtr comparator(new DataComparator<types::ContentType::VarChar,
         DynamicCastPolicy>);
-    DataPtr data1(new types::VarChar("Albin")), 
-        data2(new types::VarChar("Adelajda"));
+    DataPtr data1(new types::VarChar("Adelajda")), 
+        data2(new types::VarChar("Albin"));
     std::cout << data1->toString() 
         << ((*comparator)(*data1, *data2) ? " < " : " !< ") 
         << data2->toString() << std::endl;

@@ -1,6 +1,7 @@
 #include "config.h"
 #include <paganini/row/FieldFactory.h>
 #include <paganini/util/format.h>
+#include <paganini/row/TypeMapping.h>
 #include <stdexcept>
 
 
@@ -14,31 +15,33 @@ FieldFactory::FieldFactory()
     
     types[ContentType::Int] =
     {
-        [](size16) { return new Int; },
+        [](size16) { return new types::TypeMapping<ContentType::Int>::type; },
         [](size16) { return sizeof(int); }
     };
     
     types[ContentType::PageNumber] =
     {
-        [](size16) { return new PageNumber; },
+        [](size16) { return new 
+            types::TypeMapping<ContentType::PageNumber>::type; },
         [](size16) { return sizeof(page_number); }
     };    
     
     types[ContentType::Float] =
     {
-        [](size16) { return new Float; },
+        [](size16) { return new types::TypeMapping<ContentType::Float>::type; },
         [](size16) { return sizeof(float); }
     };
     
     types[ContentType::Char] =
     {
-        [](size16 size) { return new Char(size); },
+        [](size16 size) { return new 
+            types::TypeMapping<ContentType::Char>::type(size); },
         [](size16 size) { return size; }
     };
     
     types[ContentType::VarChar] =
     {
-        [](size16) { return new VarChar; },
+        [](size16) { return new types::TypeMapping<ContentType::VarChar>::type; },
         [](size16) { return VARIABLE_SIZE; }
     };
 }

@@ -16,8 +16,9 @@ enum class PageType// : page_flags
 {
     UNUSED = 15,    // Nieuzywana strona (domyslnie)
     HEADER = 1,     // pierwsza strona bazy danych
-    DATA = 2,       // strona z danymi
-    UV = 3          // Usage Vector
+    INDEX = 2,      // strona z indeksami
+    DATA = 3,       // Strona z danymi
+    UV = 4          // Usage Vector
 };
 
 struct PageHeader

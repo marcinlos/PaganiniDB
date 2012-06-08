@@ -59,7 +59,7 @@ void RowReader::readVariables(InputBinaryStream& stream, Row* row,
 }
 
 
-std::unique_ptr<Row> RowReader::read(raw_data buffer, const RowFormat& format)
+RowReader::ReturnType RowReader::read(raw_data buffer, const RowFormat& format)
 {
     typedef std::unique_ptr<types::Data> DataPtr;
     std::vector<DataPtr> fields(format.columnCount());      
@@ -75,7 +75,7 @@ std::unique_ptr<Row> RowReader::read(raw_data buffer, const RowFormat& format)
     size16 totalFixedSize;
     stream.read(&totalFixedSize);
     
-    std::unique_ptr<Row> row(new Row(format, flags));
+    ReturnType row(new Row(format, flags));
     
     for (const Column& column: format.fixed())
         readField(stream, row.get(), column, null_bitmap);

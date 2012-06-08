@@ -17,11 +17,13 @@ namespace paganini
 class RowReader
 {
 public:
+    typedef std::unique_ptr<Row> ReturnType;
+    
     RowReader();
     
     // Z podanego obszaru pamieci tworzy nowy wiersz w oparciu o podany
     // format i zwraca wskaznik na niego.
-    std::unique_ptr<Row> read(raw_data buffer, const RowFormat& format);
+    ReturnType read(raw_data buffer, const RowFormat& format);
     
 private:
     FieldFactory& factory;
