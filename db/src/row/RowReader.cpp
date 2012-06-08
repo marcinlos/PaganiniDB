@@ -1,7 +1,8 @@
 #include "config.h"
 #include <paganini/util/bits.h>
-#include <paganini/io/InputBinaryStream.h>
 #include <paganini/row/RowReader.h>
+#include <paganini/row/FieldFactory.h>
+#include <paganini/io/InputBinaryStream.h>
 
 
 namespace paganini

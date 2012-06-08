@@ -15,7 +15,7 @@ namespace indexing
 
 template <
     class PagingSystem
-    class Indexer,
+    class Index,
     class Reader,
     class Writer,
     class IndexReader,
@@ -25,6 +25,7 @@ class BTree
 {
 
 private:
+    PagingSystem& pager_;
     page_number root_;
 };
 

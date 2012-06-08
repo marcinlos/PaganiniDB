@@ -13,6 +13,9 @@
 #include <paganini/paging/DataPage.h>
 #include <paganini/row/Comparator.h>
 #include <paganini/indexing/ComparatorFactory.h>
+#include <paganini/indexing/Index.h>
+#include <paganini/indexing/IndexReader.h>
+#include <paganini/indexing/IndexWriter.h>
 #include <cstdio>
 #include <iostream>
 #include <iomanip>
@@ -67,6 +70,7 @@ public:
     void rowTest();
     void dataPageTest();
     void comparatorTest();
+    void indexTest();
     
 private:
     RowFormat fmt;
@@ -96,10 +100,11 @@ Test::Test():
 
 void Test::databaseCreationTest()
 {
-    PageManager<FilePersistenceManager<DummyLocker>> manager;// = PageManager::getInstance();
+    PageManager<FilePersistenceManager<DummyLocker>> manager;
     manager.createFile("db");
     manager.openFile("db");
     page_number pn = manager.allocPage();
+    auto lock = manager.readLock(3);
     manager.closeFile();
 }
 
@@ -175,11 +180,10 @@ void Test::dataPageTest()
     
     std::cout << "Calosc strony:" << std::endl;
     std::cout << format_bytes(page.page().buffer(), PAGE_SIZE) << std::endl;
-    //page.erase(1);
+    page.erase(1);
     std::cout << "Offset wolnego: " << page.header().free_offset << std::endl;
     
     std::cout << "Test odczytu: " << std::endl;
-    RowReader reader;
     for (int i = 0; i < page.rowCount(); ++ i)
     {
         std::cout << "Wiersz nr " << i << " (offset: " 
@@ -205,6 +209,27 @@ void Test::comparatorTest()
         << data2->toString() << std::endl;
 }
 
+void Test::indexTest()
+{
+    using namespace types;
+    Index idx( { ContentType::VarChar }, new VarChar("Tescik"), 99);
+    
+    std::cout << "Indeks: " << idx << std::endl;
+    
+    DataPage<Index, FieldType, IndexReader, IndexWriter> page;
+    page.insert(idx, 0);
+    
+    std::cout << format_bytes(page.page().data(), 32) << std::endl;
+    
+    std::cout << "Test odczytu: " << std::endl;
+    for (int i = 0; i < page.rowCount(); ++ i)
+    {
+        std::cout << "Wiersz nr " << i << " (offset: " 
+            << page.offset(i) << ")" << std::endl;
+        std::cout << *page.row(i, { ContentType::VarChar} ) << std::endl;
+    }
+}
+
 
 int main()
 {
@@ -216,6 +241,7 @@ int main()
         test.rowTest();
         test.dataPageTest();
         test.comparatorTest();
+        test.indexTest();
         /*        
         Row row(fmt, { new types::Int(432), new types::Float(1.23),
             new types::VarChar("Spadaj"), new types::VarChar("Cieciu") });
