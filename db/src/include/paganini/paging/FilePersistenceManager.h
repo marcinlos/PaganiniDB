@@ -13,7 +13,7 @@
 #define __PAGANINI_PAGING_FILE_PERSISTENCE_MANAGER_H__
 #include <paganini/paging/types.h>
 #include <paganini/Error.h>
-#include <paganini/paging/Page.h>
+#include <paganini/paging/PageBuffer.h>
 #include <paganini/paging/FilePersistenceManager.h>
 #include <paganini/util/format.h>
 #include <fcntl.h>
@@ -45,10 +45,10 @@ public:
     void ensurePages(page_number number);
     
     // Wczytuje do podanego bufora dane ze strony o podanym numerze
-    void read(page_number number, Page* page);
+    void read(page_number number, PageBuffer* page);
     
     // Zapisuje dane strony
-    void write(page_number number, const Page* page);
+    void write(page_number number, const PageBuffer* page);
     
     // Typy lockow
     typedef typename Locker::ReadLock ReadLock;
@@ -110,10 +110,10 @@ void FilePersistenceManager<Locker>::close()
 
 
 template <class Locker>
-void FilePersistenceManager<Locker>::read(page_number number, Page* page)
+void FilePersistenceManager<Locker>::read(page_number number, PageBuffer* page)
 {
     moveToPage_(number);
-    if (::read(fd_, page->buffer(), PAGE_SIZE) < PAGE_SIZE)
+    if (::read(fd_, page->buffer, PAGE_SIZE) < PAGE_SIZE)
     {
         throw Exception(util::format("Trying to read page nr {}", number), 
             Error::READ);
@@ -123,10 +123,10 @@ void FilePersistenceManager<Locker>::read(page_number number, Page* page)
 
 template <class Locker>
 void FilePersistenceManager<Locker>::write(page_number number, 
-    const Page* page)
+    const PageBuffer* page)
 {
     moveToPage_(number);
-    if (::write(fd_, page->buffer(), PAGE_SIZE) < PAGE_SIZE)
+    if (::write(fd_, page->buffer, PAGE_SIZE) < PAGE_SIZE)
     {      
         throw Exception(util::format("Trying to write page nr {}", number), 
             Error::WRITE);

@@ -5,8 +5,7 @@
 #ifndef __PAGANINI_PAGING_PAGE_MANAGER_H__
 #define __PAGANINI_PAGING_PAGE_MANAGER_H__
 
-#include <paganini/paging/Page.h>
-#include <paganini/paging/PageManager.h>
+#include <paganini/paging/PageBuffer.h>
 #include <paganini/paging/DatabaseHeader.h>
 #include <paganini/Error.h>
 #include <paganini/util/format.h>
@@ -75,14 +74,14 @@ public:
     bool deletePage(page_number number);
 
     // Wczytuje do podanego bufora strone o zadanym numerze. 
-    void readPage(page_number number, Page* page);
+    void readPage(page_number number, PageBuffer* page);
     
     // Zwraca nowo zaalokowana strone z zawartoscia strony o podanym numerze
-    std::unique_ptr<Page> readPage(page_number number);
+    std::unique_ptr<PageBuffer> readPage(page_number number);
 
     // Zapisuje do strony o podanym numerze dane z bufora. W celu zachowania 
     // spojnosci danych, strona powinna istniec i byc zaznaczona jako uzyta.
-    void writePage(page_number number, const Page* page);
+    void writePage(page_number number, const PageBuffer* page);
     
     // Typy lockow
     typedef typename PersistenceManager::ReadLock ReadLock;
@@ -100,10 +99,10 @@ private:
     void createHeader_();
     page_number createUVPage_(page_number previous_uv);
     static page_number findUV_(page_number number);
-    page_number readUVOfPage_(page_number number, Page* page);
+    page_number readUVOfPage_(page_number number, PageBuffer* page);
     bool markAsUsed_(page_number number);
     bool markAsFree_(page_number number);
-    int scanForFree_(const Page* uv);
+    int scanForFree_(const PageBuffer* uv);
     void growFile_(size32 page_count);
     page_number findFree_();
 };
@@ -119,7 +118,7 @@ PageManager<PersistenceManager>::PageManager()
 template <class PersistenceManager>
 void PageManager<PersistenceManager>::createHeader_()
 {
-    Page page(0, PageType::HEADER);
+    PageBuffer page(0, PageType::HEADER);
 
     // Zapisujemy metadane 
     DatabaseHeader* data = page.create<DatabaseHeader>("Default DB Name",
@@ -142,18 +141,18 @@ page_number PageManager<PersistenceManager>::createUVPage_(
         new_page = previous_uv + PAGES_PER_UV + 1;
     
     // Uaktualniamy nexta w poprzedniej UV-stronie, jesli istnieje
-    Page page;
+    PageBuffer page;
     
     if (previous_uv != NULL_PAGE)
     {
         readPage(previous_uv, &page);
-        page.header().next = new_page;
+        page.header.next = new_page;
         writePage(previous_uv, &page);
     }
     
     // Wypelniamy naglowek strony, typ = UV_PAGE
-    page.header().fill(new_page, PageType::UV);
-    page.header().prev = previous_uv;
+    page.header.fill(new_page, PageType::UV);
+    page.header.prev = previous_uv;
 
     page.clearData();
     
@@ -215,7 +214,7 @@ page_number PageManager<PersistenceManager>::findUV_(page_number number)
 // gdy strona nie posiada odpowiadajacej strony UV.
 template <class PersistenceManager>
 page_number PageManager<PersistenceManager>::readUVOfPage_(page_number number, 
-    Page* page)
+    PageBuffer* page)
 {
     page_number uv = findUV_(number);
     if (uv != NULL_PAGE)
@@ -232,14 +231,14 @@ template <class PersistenceManager>
 bool PageManager<PersistenceManager>::markAsUsed_(page_number number)
 {
     // Wczytujemy odpowiednia strone UV
-    Page page;
+    PageBuffer page;
     page_number uv;
     if ((uv = readUVOfPage_(number, &page)) == NULL_PAGE)
         return false;
         
     // Numer bitu to pozycja wzgledem strony UV
     int bit = number - (uv + 1);
-    util::set_bit(page.data(), bit);
+    util::set_bit(page.data, bit);
     
     writePage(uv, &page);
     return true;
@@ -251,13 +250,13 @@ bool PageManager<PersistenceManager>::markAsUsed_(page_number number)
 template <class PersistenceManager>
 bool PageManager<PersistenceManager>::markAsFree_(page_number number)
 {
-    Page page;
+    PageBuffer page;
     page_number uv;
     if ((uv = readUVOfPage_(number, &page)) == NULL_PAGE)
         return false;
  
     int bit = number - (uv + 1);
-    util::unset_bit(page.data(), bit);
+    util::unset_bit(page.data, bit);
  
     writePage(uv, &page);
     return true;
@@ -268,13 +267,13 @@ bool PageManager<PersistenceManager>::markAsFree_(page_number number)
 // zerowego bitu (nieuzywany blok). Zwraca jego pozycje, badz -1 gdy takowego 
 // nie ma.
 template <class PersistenceManager>
-int PageManager<PersistenceManager>::scanForFree_(const Page* uv)
+int PageManager<PersistenceManager>::scanForFree_(const PageBuffer* uv)
 {
     // Po bajtach... mozna by optymalniej, ale... oj tam
     for (int i = 0; i < PAGES_PER_UV / 8; ++ i)
     {
         // Napisalem funkcje do znajdowania NIEzerowego bitu...
-        unsigned char b = ~uv->data()[i];
+        unsigned char b = ~uv->data[i];
         if (b != 0)  
         {
             return i * 8 + util::first_nonzero_bit(b);
@@ -290,7 +289,7 @@ void PageManager<PersistenceManager>::growFile_(size32 page_count)
 {
     // Wczytujemy z naglowka bazy danych informacje o ilosci wszystkich stron.
     // Moze daloby sie tego uniknac?
-    Page page;
+    PageBuffer page;
     readPage(HEADER_PAGE_NUMBER, &page);
         
     DatabaseHeader* header = page.get<DatabaseHeader>();
@@ -327,7 +326,7 @@ template <class PersistenceManager>
 page_number PageManager<PersistenceManager>::findFree_()
 {
     // Pobieramy ilosc stron
-    Page page;
+    PageBuffer page;
     readPage(HEADER_PAGE_NUMBER, &page);
     DatabaseHeader* db_header = page.get<DatabaseHeader>();
     size32 count = db_header->page_count;
@@ -344,7 +343,7 @@ page_number PageManager<PersistenceManager>::findFree_()
         int num = scanForFree_(&page);
         if (num != -1)
         {
-            page_number free = page.header().number + num + 1;
+            page_number free = page.header.number + num + 1;
 
             // Sprawdzenie dla niepelnych stron UV
             if (free < count)
@@ -356,7 +355,7 @@ page_number PageManager<PersistenceManager>::findFree_()
             }
         }
         prev = uv;
-        uv = page.header().next;
+        uv = page.header.next;
     }
     // Nie bylo wolnego, trzeba zaalokowac nowe strony
     growFile_(GROWTH_RATE);
@@ -372,7 +371,7 @@ page_number PageManager<PersistenceManager>::findFree_()
     else
     {
         readPage(prev, &page);
-        return page.header().next + 1;
+        return page.header.next + 1;
     }
 }
 
@@ -384,7 +383,7 @@ page_number PageManager<PersistenceManager>::allocPage()
 
     // Wypelniamy obowiazki administracyjne
     markAsUsed_(free);
-    Page page(free);
+    PageBuffer page(free);
  
     writePage(free, &page);
     return free;
@@ -399,17 +398,17 @@ bool PageManager<PersistenceManager>::deletePage(page_number number)
 
 
 template <class PersistenceManager>
-void PageManager<PersistenceManager>::readPage(page_number number, Page* page)
+void PageManager<PersistenceManager>::readPage(page_number number, PageBuffer* page)
 {
     this->read(number, page);
 }
 
 
 template <class PersistenceManager>
-std::unique_ptr<Page> 
+std::unique_ptr<PageBuffer> 
 PageManager<PersistenceManager>::readPage(page_number number)
 {
-    std::unique_ptr<Page> page(new Page);
+    std::unique_ptr<PageBuffer> page(new PageBuffer);
     readPage(number, page.get());
     return page;
 }
@@ -417,7 +416,7 @@ PageManager<PersistenceManager>::readPage(page_number number)
 
 template <class PersistenceManager>
 void PageManager<PersistenceManager>::writePage(page_number number, 
-    const Page* page)
+    const PageBuffer* page)
 {
     this->write(number, page);
 }

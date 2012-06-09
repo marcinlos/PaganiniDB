@@ -1,9 +1,10 @@
 #include "config.h"
 #include <paganini/paging/PageHeader.h>
-#include <paganini/paging/Page.h>
+#include <paganini/paging/configuration.h>
 
 namespace paganini
 {
+
 
 PageHeader::PageHeader(page_number number, PageType type)
 {

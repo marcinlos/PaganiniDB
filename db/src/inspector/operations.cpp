@@ -93,7 +93,7 @@ void print_page_header(const vector<string>& args)
             args[0].c_str());
         return;
     }
-    Page page;
+    PageBuffer page;
     try { manager->readPage(page_number, &page); }
     catch (Exception& e)
     {
@@ -101,7 +101,7 @@ void print_page_header(const vector<string>& args)
         error_usr("Nie udalo sie odczytac strony %d", page_number);
         return;
     }
-    _print_page_header(page.header());    
+    _print_page_header(page.header);    
 }
 
 // Wypisywanie naglowka bazy danych
@@ -121,7 +121,7 @@ void _print_db_header(const DatabaseHeader* dbh)
 
 void print_db_header(const vector<string>& args)
 {
-    Page page;
+    PageBuffer page;
     DatabaseHeader* dbh = page.get<DatabaseHeader>();
     try { manager->readPage(HEADER_PAGE_NUMBER, &page); }
     catch (Exception& e)
@@ -145,13 +145,13 @@ void _print_byte(unsigned char b)
     }
 }
 
-void _print_uv_content(const Page* page)
+void _print_uv_content(const PageBuffer* page)
 {
     for (int i = 0; i < PAGES_PER_UV / 8; ++ i)
     {
         if (i % 8 == 0)
             putchar('\n');
-        _print_byte(page->data()[i]);
+        _print_byte(page->data[i]);
         putchar(' ');
     }
     putchar('\n');
@@ -176,7 +176,7 @@ void print_uv_content(const vector<string>& args)
         error_usr("To nie jest strona UV");
         return;
     }
-    Page page;
+    PageBuffer page;
     try { manager->readPage(page_number, &page); }
     catch (Exception& e)
     {

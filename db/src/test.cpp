@@ -32,14 +32,15 @@ inline unsigned char make_ascii(unsigned char c)
     return c == '\0' ? '.' : (c < ' ' ? ' ' : c);
 }
 
-string format_bytes(raw_data data, size16 len, size16 in_line = 16)
+string format_bytes(const_raw_data data, size16 len, size16 in_line = 16)
 {
     std::ostringstream ss;
     int lines = (len + in_line - 1) / in_line;
     for (int i = 0; i < len / in_line; ++ i)
     {
+        typedef const unsigned char* bytes;
         ss << std::setw(4) << std::hex << i * in_line << " |";
-        unsigned char* d = reinterpret_cast<unsigned char*>(data + i * in_line);
+        bytes d = reinterpret_cast<bytes>(data + i * in_line);
         for (int j = 0; j < in_line; ++ j)
         {
             ss << hex_digit((d[j] & 0xf0) >> 4);
@@ -179,7 +180,7 @@ void Test::dataPageTest()
     page.insert(row, 2);
     
     std::cout << "Calosc strony:" << std::endl;
-    std::cout << format_bytes(page.page().buffer(), PAGE_SIZE) << std::endl;
+    std::cout << format_bytes(page.buffer().buffer, PAGE_SIZE) << std::endl;
     page.erase(1);
     std::cout << "Offset wolnego: " << page.header().free_offset << std::endl;
     
@@ -219,7 +220,7 @@ void Test::indexTest()
     DataPage<Index, FieldType, IndexReader, IndexWriter> page;
     page.insert(idx, 0);
     
-    std::cout << format_bytes(page.page().data(), 32) << std::endl;
+    std::cout << format_bytes(page.buffer().data, 32) << std::endl;
     
     std::cout << "Test odczytu: " << std::endl;
     for (int i = 0; i < page.rowCount(); ++ i)

@@ -9,17 +9,18 @@ namespace paganini
 {
 
 
-Page::Page(page_number number, PageType type):
-    header_(*(new (buffer_) PageHeader(number, type))),
-    data_(buffer_ + HEADER_SIZE)
+Page::Page(): buffer_(new PageBuffer)
 {
-    // clearData();
 }
 
 
-void Page::clearData()
+Page::Page(std::shared_ptr<PageBuffer> page): buffer_(page)
 {
-    std::fill_n(data_, DATA_SIZE, 0);
+}
+
+
+Page::Page(const Page& other): buffer_(other.buffer_)
+{
 }
 
 

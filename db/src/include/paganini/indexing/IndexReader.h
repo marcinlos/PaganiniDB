@@ -30,5 +30,4 @@ private:
 }
 
 
-
 #endif // __PAGANINI_INDEXING_INDEX_READER_H__

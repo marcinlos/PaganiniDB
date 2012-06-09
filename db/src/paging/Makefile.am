@@ -2,6 +2,7 @@ AM_CPPFLAGS = -I ../include
 
 noinst_LTLIBRARIES = libpaging.la
 libpaging_la_SOURCES = PageHeader.cpp \
+                       PageBuffer.cpp \
                        Page.cpp \
                        DatabaseHeader.cpp \
                        PageManager.cpp \
@@ -9,7 +10,9 @@ libpaging_la_SOURCES = PageHeader.cpp \
                        DataPage.cpp
 
 libpaging_la_includedir = ${includedir}/paganini/paging
-libpaging_la_include_HEADERS = ../include/paganini/paging/Page.h \
+libpaging_la_include_HEADERS = ../include/paganini/paging/configuration.h \
+                               ../include/paganini/paging/PageBuffer.h \
+                               ../include/paganini/paging/Page.h \
                                ../include/paganini/paging/PageHeader.h \
                                ../include/paganini/paging/PageManager.h \
                                ../include/paganini/paging/FilePersistenceManager.h \

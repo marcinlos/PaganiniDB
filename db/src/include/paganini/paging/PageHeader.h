@@ -1,6 +1,5 @@
 /*
-    Definicja naglowka strony, oraz typ wyliczeniowy opisujacy rodzaj
-    strony.
+    Definicja naglowka strony
 */
 #ifndef __PAGANINI_PAGING_PAGE_HEADER_H__
 #define __PAGANINI_PAGING_PAGE_HEADER_H__
@@ -20,6 +19,7 @@ enum class PageType// : page_flags
     DATA = 3,       // Strona z danymi
     UV = 4          // Usage Vector
 };
+
 
 struct PageHeader
 {
