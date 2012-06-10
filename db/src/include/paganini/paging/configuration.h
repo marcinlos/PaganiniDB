@@ -6,6 +6,7 @@
 
 #include <paganini/paging/types.h>
 #include <paganini/paging/PageHeader.h>
+#include <iostream>
 
 
 namespace paganini
@@ -13,6 +14,23 @@ namespace paganini
 
 
 // Flagi
+enum class PageFlags
+{
+    // Flaga oznaczajaca, czy strona jest lisciem
+    LEAF = 1 << 5
+};
+
+
+inline std::ostream& operator << (std::ostream& os, PageFlags flags)
+{
+    const char* str = "INVALID";
+    switch (flags)
+    {
+    case PageFlags::LEAF: str = "LEAF"; break;
+    }
+    return os << str;
+}
+
 
 // Ilosc bitow na typ strony
 static const int BITS_PER_PAGE_TYPE = 4;

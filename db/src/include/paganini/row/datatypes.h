@@ -14,10 +14,8 @@
 #include <paganini/paging/types.h>
 #include <paganini/util/format.h>
 #include <string>
-#include <cstring>
 #include <vector>
 #include <functional>
-#include <iostream>
 using std::string;
 
 
@@ -49,9 +47,9 @@ enum class ContentType
 };
 
 
-
-inline std::ostream& operator << (std::ostream& os, ContentType content)
+inline std::ostream& operator << (std::ostream& os, types::ContentType content)
 {
+    using types::ContentType;
     const char* str;
     switch (content)
     {
@@ -61,10 +59,11 @@ inline std::ostream& operator << (std::ostream& os, ContentType content)
     case ContentType::PageNumber: str = "page_number"; break;
     case ContentType::Char: str = "char"; break;
     case ContentType::VarChar: str = "varchar"; break;
-    default: "INVALID";
+    default: str = "INVALID";
     }
     return os << str;
 }
+
 
 // Pelny opis typu danych - rodzaj + wielkosc (dla char).
 struct FieldType
@@ -79,6 +78,19 @@ struct FieldType
     }
 };
 
+
+// Umozliwia wypisywanie FieldType w czytelnym formacie (do debugowania)
+inline std::ostream& operator << (std::ostream& os, 
+    const types::FieldType& type)
+{
+    using types::FieldType;
+    os << type.content;
+    if (type.size != FieldType::NON_APPLICABLE)
+        os << "(" << type.size << ")";
+    return os;
+}
+
+
 // Operatory do FieldType
 inline bool operator == (const FieldType& first, const FieldType& second)
 {
@@ -88,15 +100,6 @@ inline bool operator == (const FieldType& first, const FieldType& second)
 inline bool operator != (const FieldType& first, const FieldType& second)
 {
     return ! (first == second);
-}
-
-// Umozliwia wypisywanie FieldType w czytelnym formacie (do debugowania)
-inline std::ostream& operator << (std::ostream& os, const FieldType& type)
-{
-    os << type.content;
-    if (type.size != FieldType::NON_APPLICABLE)
-        os << "(" << type.size << ")";
-    return os;
 }
 
 
@@ -113,8 +116,8 @@ inline bool is_variable_size(ContentType type)
 class Data
 {  
 public:
-    // Zapisuje dane do bufora. Zwraca ilosc zapisanych bajtow.
-    virtual size16 writeTo(OutputBinaryStream& stream) const = 0;
+    // Zapisuje dane do bufora.
+    virtual void writeTo(OutputBinaryStream& stream) const = 0;
     
     // Wczytuje dane z podanego strumienia. Drugi argument powinien miec
     // znaczenie wylacznie dla typow zmiennej wielkosci.
@@ -153,7 +156,7 @@ public:
     {
     }
     
-    size16 writeTo(OutputBinaryStream& stream) const
+    void writeTo(OutputBinaryStream& stream) const
     {
         stream.write(val);
     }
@@ -196,7 +199,7 @@ public:
         std::copy(value.begin(), value.end(), val.begin());
     }
     
-    size16 writeTo(OutputBinaryStream& stream) const
+    void writeTo(OutputBinaryStream& stream) const
     {
         stream.writeRange(val.begin(), val.end());
     }
@@ -228,7 +231,7 @@ public:
     {
     }
     
-    size16 writeTo(OutputBinaryStream& stream) const
+    void writeTo(OutputBinaryStream& stream) const
     {
         stream.writeRange(val.begin(), val.end());
     }

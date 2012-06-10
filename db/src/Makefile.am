@@ -1,4 +1,4 @@
-SUBDIRS = error_msg paging row io indexing
+SUBDIRS = error_msg paging row io indexing inspect
 
 AM_CPPFLAGS = -I include
 
@@ -8,7 +8,8 @@ libpaganini_la_LIBADD = error_msg/liberrormsg.la \
                         paging/libpaging.la \
                         row/librow.la \
                         io/libio.la \
-                        indexing/libindexing.la
+                        indexing/libindexing.la \
+                        inspect/libinspect.la
 
 libpaganini_la_includedir = ${includedir}/paganini
 libpaganini_la_include_HEADERS = include/paganini/paganini.h
@@ -21,7 +22,7 @@ util_HEADERS = include/paganini/util/bits.h \
                include/paganini/util/IndexedView.h \
                include/paganini/util/Singleton.h
 
-noinst_PROGRAMS = test insp
+noinst_PROGRAMS = test insp treetest
 test_SOURCES = test.cpp
 test_LDADD = libpaganini.la
 
@@ -30,4 +31,7 @@ insp_SOURCES = inspector/cmd.cpp \
                inspector/operations.cpp
                     
 insp_LDADD = libpaganini.la
+
+treetest_SOURCES = treetest.cpp
+treetest_LDADD = libpaganini.la
 

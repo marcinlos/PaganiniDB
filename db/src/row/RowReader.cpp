@@ -18,7 +18,7 @@ void RowReader::readField(InputBinaryStream& stream, Row* row,
 {
     column_number col = column.col;
     std::unique_ptr<types::Data> data = nullptr;
-    bool is = null_bitmap[col];
+    
     if (! null_bitmap[col])
     {
         data = factory.create(column.type);

@@ -9,7 +9,7 @@ namespace paganini
 
 
 Column::Column(types::FieldType type, string name, column_flags flags):
-    type(type), name(name), flags(flags), col(NULL_COLUMN)
+    name(name), col(NULL_COLUMN), type(type), flags(flags)
 {
 }
 

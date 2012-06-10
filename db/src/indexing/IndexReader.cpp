@@ -26,7 +26,8 @@ IndexReader::ReturnType IndexReader::read(raw_data buffer,
         
     DataPtr value = factory.create(format);
     value->readFrom(stream, size);
-    return ReturnType(new Index(format, value.release(), child));
+    return ReturnType(new Index(format, 
+        Index::ConstDataPtr(value.release()), child));
 }
 
 

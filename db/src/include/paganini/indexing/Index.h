@@ -20,10 +20,9 @@ public:
     typedef std::shared_ptr<types::Data> DataPtr;
     typedef std::shared_ptr<const types::Data> ConstDataPtr;
      
-    Index(types::FieldType type, types::Data* value, page_number child);
+    Index(const types::FieldType& type, ConstDataPtr value, page_number child);
 
     // Zwraca przechowywana wartosc indeksu
-    inline DataPtr value();
     inline ConstDataPtr value() const;
     
     // Zwraca numer strony, na ktora pokazuje indeks
@@ -34,15 +33,9 @@ public:
     
 private:
     types::FieldType type_;
-    DataPtr value_;
+    ConstDataPtr value_;
     page_number child_;
 };
-
-
-Index::DataPtr Index::value()
-{
-    return value_;
-}
 
 
 Index::ConstDataPtr Index::value() const

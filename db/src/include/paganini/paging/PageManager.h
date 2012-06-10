@@ -119,12 +119,13 @@ template <class PersistenceManager>
 void PageManager<PersistenceManager>::createHeader_()
 {
     PageBuffer page(0, PageType::HEADER);
-
+    std::cerr << "PageBuffer stworzony" << std::endl;
     // Zapisujemy metadane 
-    DatabaseHeader* data = page.create<DatabaseHeader>("Default DB Name",
-        FIRST_ALLOC);
+    page.create<DatabaseHeader>("Default DB Name", FIRST_ALLOC);
+    std::cerr << "Zapisane metadane" << std::endl;
         
     writePage(0, &page);
+    std::cerr << "I strona tez" << std::endl;
 }
 
 
@@ -270,7 +271,7 @@ template <class PersistenceManager>
 int PageManager<PersistenceManager>::scanForFree_(const PageBuffer* uv)
 {
     // Po bajtach... mozna by optymalniej, ale... oj tam
-    for (int i = 0; i < PAGES_PER_UV / 8; ++ i)
+    for (unsigned int i = 0; i < PAGES_PER_UV / 8; ++ i)
     {
         // Napisalem funkcje do znajdowania NIEzerowego bitu...
         unsigned char b = ~uv->data[i];
@@ -329,7 +330,7 @@ page_number PageManager<PersistenceManager>::findFree_()
     PageBuffer page;
     readPage(HEADER_PAGE_NUMBER, &page);
     DatabaseHeader* db_header = page.get<DatabaseHeader>();
-    size32 count = db_header->page_count;
+    int count = db_header->page_count;
     
     page_number uv = FIRST_UV_PAGE_NUMBER;
     page_number prev = uv;
@@ -398,7 +399,8 @@ bool PageManager<PersistenceManager>::deletePage(page_number number)
 
 
 template <class PersistenceManager>
-void PageManager<PersistenceManager>::readPage(page_number number, PageBuffer* page)
+void PageManager<PersistenceManager>::readPage(page_number number, 
+    PageBuffer* page)
 {
     this->read(number, page);
 }

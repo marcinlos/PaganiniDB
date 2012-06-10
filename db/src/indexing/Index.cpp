@@ -5,7 +5,8 @@ namespace paganini
 {
 
 
-Index::Index(types::FieldType type, types::Data* value, page_number child):
+Index::Index(const types::FieldType& type, ConstDataPtr value, 
+    page_number child):
     type_(type), value_(value), child_(child)
 {
 }

@@ -10,6 +10,9 @@
 #include <paganini/paging/types.h>
 #include <paganini/row/datatypes.h>
 #include <paganini/util/IndexedView.h>
+
+#include <paganini/inspect/primitives.h>
+
 #include <string>
 #include <vector>
 #include <unordered_map>

@@ -9,6 +9,9 @@
 
 #include <paganini/row/datatypes.h>
 #include <paganini/row/RowFormat.h>
+
+#include <paganini/inspect/primitives.h>
+
 #include <vector>
 #include <memory>
 #include <iostream>

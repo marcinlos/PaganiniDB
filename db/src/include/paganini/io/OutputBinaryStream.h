@@ -64,7 +64,7 @@ size16 OutputBinaryStream::write<double>(raw_data buffer, const double& value);
 template <typename T>
 size16 OutputBinaryStream::write(raw_data buffer, const T& value)
 {
-    for (int i = 0; i < sizeof(value); ++ i)
+    for (unsigned int i = 0; i < sizeof(value); ++ i)
     {
         *buffer++ = ((value >> (8 * i)) & 0xff);
     }

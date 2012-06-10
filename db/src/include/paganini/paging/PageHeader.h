@@ -5,6 +5,7 @@
 #define __PAGANINI_PAGING_PAGE_HEADER_H__
 
 #include <paganini/paging/types.h>
+#include <iostream>
 
 
 namespace paganini
@@ -19,6 +20,22 @@ enum class PageType// : page_flags
     DATA = 3,       // Strona z danymi
     UV = 4          // Usage Vector
 };
+
+
+inline std::ostream& operator << (std::ostream& os, PageType type)
+{
+    const char* str;
+    switch (type)
+    {
+    case PageType::UNUSED: str = "unused"; break;
+    case PageType::HEADER: str = "header"; break;
+    case PageType::INDEX: str = "index"; break;
+    case PageType::DATA: str = "data"; break;
+    case PageType::UV: str = "usage vector"; break;
+    default: str = "INVALID"; break;
+    }
+    return os << str;
+}
 
 
 struct PageHeader

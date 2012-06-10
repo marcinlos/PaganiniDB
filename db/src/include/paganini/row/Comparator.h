@@ -19,8 +19,8 @@ template <typename DataType>
 class Comparator
 {
 public:
-    // Zwraca true jesli a < b
-    virtual bool operator () (const DataType& a, const DataType& b) const = 0;
+    // Zwraca liczbe < 0 jesli a < b, 0 jesli a = b, >0 jesli a > b
+    virtual int operator () (const DataType& a, const DataType& b) const = 0;
     
     virtual ~Comparator() = 0;
 };
@@ -44,19 +44,30 @@ public:
     typedef types::Data BaseType;
     typedef typename types::TypeMapping<Type>::type ComparedType;
     
-    bool operator () (const BaseType& a, const BaseType& b) const;
+    template <typename U, typename V>
+    inline static int compare(const U& u, const V& v);
+    
+    int operator () (const BaseType& a, const BaseType& b) const;
 };
 
 
 template <types::ContentType Type, class CastingPolicy>
-bool DataComparator<Type, CastingPolicy>::operator ()(const BaseType& a, 
+template <typename U, typename V>
+int DataComparator<Type, CastingPolicy>::compare(const U& u, const V& v)
+{
+    return u < v ? -1 : u == v ? 0 : 1;
+}
+
+
+template <types::ContentType Type, class CastingPolicy>
+int DataComparator<Type, CastingPolicy>::operator ()(const BaseType& a, 
     const BaseType& b) const
 {
     CastingPolicy cast;
     const ComparedType& aa = cast.template operator()<ComparedType>(a);
     const ComparedType& bb = cast.template operator()<ComparedType>(b);
     
-    return aa.value() < bb.value();
+    return compare(aa.value(), bb.value());
 }
 
 

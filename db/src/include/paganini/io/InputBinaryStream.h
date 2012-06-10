@@ -72,7 +72,7 @@ template <typename T>
 size16 InputBinaryStream::read(const_raw_data buffer, T* output)
 {
     *output = T();
-    for (int i = 0; i < sizeof(T); ++ i)
+    for (unsigned int i = 0; i < sizeof(T); ++ i)
     {
         *output |= ((static_cast<T>(*buffer++) & 0xff) << (i * 8));
     }
@@ -85,7 +85,7 @@ size16 InputBinaryStream::readRange(const_raw_data buffer, OutputIter out,
     size16 count)
 {
     size16 sum = 0;
-    for (int i = 0; i < count; ++ i)
+    for (unsigned int i = 0; i < count; ++ i)
     {
         // Zwykly read przyjmuje wskaznik, wiec bierzemy adres z
         // dereferencji iteratora

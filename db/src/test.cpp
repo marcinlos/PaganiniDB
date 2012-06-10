@@ -16,6 +16,7 @@
 #include <paganini/indexing/Index.h>
 #include <paganini/indexing/IndexReader.h>
 #include <paganini/indexing/IndexWriter.h>
+#include <paganini/indexing/RowIndexer.h>
 #include <cstdio>
 #include <iostream>
 #include <iomanip>
@@ -35,7 +36,6 @@ inline unsigned char make_ascii(unsigned char c)
 string format_bytes(const_raw_data data, size16 len, size16 in_line = 16)
 {
     std::ostringstream ss;
-    int lines = (len + in_line - 1) / in_line;
     for (int i = 0; i < len / in_line; ++ i)
     {
         typedef const unsigned char* bytes;
@@ -103,9 +103,11 @@ void Test::databaseCreationTest()
 {
     PageManager<FilePersistenceManager<DummyLocker>> manager;
     manager.createFile("db");
+    std::cerr << "Otwieramy" << std::endl;
     manager.openFile("db");
-    page_number pn = manager.allocPage();
-    auto lock = manager.readLock(3);
+    std::cerr << "Alokujemy" << std::endl;
+    manager.allocPage();
+    manager.readLock(3);
     manager.closeFile();
 }
 
@@ -180,7 +182,7 @@ void Test::dataPageTest()
     page.insert(row, 2);
     
     std::cout << "Calosc strony:" << std::endl;
-    std::cout << format_bytes(page.buffer().buffer, PAGE_SIZE) << std::endl;
+    std::cout << format_bytes(page.buffer()->buffer, PAGE_SIZE) << std::endl;
     page.erase(1);
     std::cout << "Offset wolnego: " << page.header().free_offset << std::endl;
     
@@ -213,14 +215,14 @@ void Test::comparatorTest()
 void Test::indexTest()
 {
     using namespace types;
-    Index idx( { ContentType::VarChar }, new VarChar("Tescik"), 99);
+    Index idx( { ContentType::VarChar }, Index::DataPtr(new VarChar("Tescik")), 99);
     
     std::cout << "Indeks: " << idx << std::endl;
     
     DataPage<Index, FieldType, IndexReader, IndexWriter> page;
     page.insert(idx, 0);
     
-    std::cout << format_bytes(page.buffer().data, 32) << std::endl;
+    std::cout << format_bytes(page.buffer()->data, 32) << std::endl;
     
     std::cout << "Test odczytu: " << std::endl;
     for (int i = 0; i < page.rowCount(); ++ i)
@@ -229,6 +231,9 @@ void Test::indexTest()
             << page.offset(i) << ")" << std::endl;
         std::cout << *page.row(i, { ContentType::VarChar} ) << std::endl;
     }
+    RowIndexer ri(fmt, "Name");
+    RowIndexer::ReturnType index = ri(row, 33);
+    std::cout << "Index: " << *index << std::endl;
 }
 
 

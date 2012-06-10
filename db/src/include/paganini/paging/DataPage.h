@@ -22,6 +22,7 @@
 #define __PAGANINI_PAGING_DATA_PAGE_H__
 
 #include <paganini/paging/types.h>
+#include <paganini/paging/configuration.h>
 #include <paganini/paging/Page.h>
 #include <paganini/row/Row.h>
 #include <paganini/util/format.h>
@@ -37,16 +38,17 @@ namespace paganini
 {
 
 template <
-    typename RowType, 
-    typename FormatInfo,
-    class Reader, 
-    class Writer
+    typename _RowType, 
+    typename _FormatInfo,
+    class _Reader, 
+    class _Writer
     >
 class DataPage: public Page
 {    
 public:
-    // Flaga oznaczajaca, czy strona jest lisciem
-    static const int LEAF_FLAG = 1 << 5;
+
+    typedef _RowType RowType;
+    typedef _FormatInfo FormatInfo;
     
     // Tworzy strone danych z nowym buforem strony
     DataPage();
@@ -62,14 +64,20 @@ public:
     inline size16 rowCount() const;
     
     // Sprawdza, czy dany wiersz zmiesci sie na stronie.
-    bool canFit(const RowType& row) const;
+    bool canFit(const _RowType& row) const;
     
     // Zapisuje wiersz tak, aby byl widziany jako wiersz o indeksie
     // number w tej stronie.
-    void insert(const RowType& row, row_number number);
+    void insert(const _RowType& row, row_number number);
     
     // Usuwa wiersz o podanym indeksie
     void erase(row_number number);
+    
+    // Sprawdza flage liscia
+    bool leaf() const;
+    
+    // Ustawia flage liscia
+    void setLeaf(bool is = true);
     
     // Zwraca offset wiersza o podanym numerze. Wartosci te nie musza byc
     // monotoniczne, ulozenie danych jest dowolne.
@@ -80,8 +88,8 @@ public:
     inline const_raw_data rowData(row_number number) const;
     
     // Zwraca obiekt reprezetujacy wiersz o podanym numerze
-    typename Reader::ReturnType row(row_number number, 
-        const FormatInfo& format) const;
+    typename _Reader::ReturnType row(row_number number, 
+        const _FormatInfo& format) const;
     
 private:   
     std::reverse_iterator<page_offset*> offset_array_;
@@ -90,39 +98,40 @@ private:
 };
 
 
-template <typename RowType, typename FormatInfo, class Reader, class Writer>
-DataPage<RowType, FormatInfo, Reader, Writer>::DataPage(): 
+template <typename _RowType, typename _FormatInfo, class _Reader, class _Writer>
+DataPage<_RowType, _FormatInfo, _Reader, _Writer>::DataPage(): 
     offset_array_(reinterpret_cast<page_offset*>(buffer_->back()))
 {
 }
 
 
-template <typename RowType, typename FormatInfo, class Reader, class Writer>
-DataPage<RowType, FormatInfo, Reader, 
-    Writer>::DataPage(std::shared_ptr<PageBuffer> page): Page(page),
+template <typename _RowType, typename _FormatInfo, class _Reader, class _Writer>
+DataPage<_RowType, _FormatInfo, _Reader, 
+    _Writer>::DataPage(std::shared_ptr<PageBuffer> page): Page(page),
     offset_array_(reinterpret_cast<page_offset*>(buffer_->back()))
 {
 }
 
 
-template <typename RowType, typename FormatInfo, class Reader, class Writer>
-DataPage<RowType, FormatInfo, Reader, Writer>::DataPage(const DataPage& other): 
+template <typename _RowType, typename _FormatInfo, class _Reader, class _Writer>
+DataPage<_RowType, _FormatInfo, _Reader, 
+    _Writer>::DataPage(const DataPage& other): 
     Page(other),
     offset_array_(reinterpret_cast<page_offset*>(buffer_->back()))
 {
 }
 
 
-template <typename RowType, typename FormatInfo, class Reader, class Writer>
-size16 DataPage<RowType, FormatInfo, Reader, Writer>::rowCount() const
+template <typename _RowType, typename _FormatInfo, class _Reader, class _Writer>
+size16 DataPage<_RowType, _FormatInfo, _Reader, _Writer>::rowCount() const
 {
     return buffer_->header.rows;
 }
 
 
-template <typename RowType, typename FormatInfo, class Reader, class Writer>
-page_offset DataPage<RowType, FormatInfo, Reader, 
-    Writer>::offset(row_number number) const
+template <typename _RowType, typename _FormatInfo, class _Reader, class _Writer>
+page_offset DataPage<_RowType, _FormatInfo, _Reader, 
+    _Writer>::offset(row_number number) const
 {
     if (number >= 0 && number < buffer_->header.rows)
         return offset_array_[number];
@@ -132,9 +141,9 @@ page_offset DataPage<RowType, FormatInfo, Reader,
 }
 
 
-template <typename RowType, typename FormatInfo, class Reader, class Writer>
-raw_data DataPage<RowType, FormatInfo, Reader, 
-    Writer>::rowData(row_number number)
+template <typename _RowType, typename _FormatInfo, class _Reader, class _Writer>
+raw_data DataPage<_RowType, _FormatInfo, _Reader, 
+    _Writer>::rowData(row_number number)
 {
     if (number >= 0 && number < buffer_->header.rows)
         return buffer_->data + offset(number);
@@ -144,9 +153,9 @@ raw_data DataPage<RowType, FormatInfo, Reader,
 }
 
 
-template <typename RowType, typename FormatInfo, class Reader, class Writer>
-const_raw_data DataPage<RowType, FormatInfo, Reader, 
-    Writer>::rowData(row_number number) const
+template <typename _RowType, typename _FormatInfo, class _Reader, class _Writer>
+const_raw_data DataPage<_RowType, _FormatInfo, _Reader, 
+    _Writer>::rowData(row_number number) const
 {
     if (number >= 0 && number < buffer_->header.rows)
         return buffer_->data + offset(number);
@@ -156,14 +165,14 @@ const_raw_data DataPage<RowType, FormatInfo, Reader,
 }
 
 
-template <typename RowType, typename FormatInfo, class Reader, class Writer>
-typename Reader::ReturnType DataPage<RowType, FormatInfo, Reader,
-    Writer>::row(row_number number, const FormatInfo& format) const
+template <typename _RowType, typename _FormatInfo, class _Reader, class _Writer>
+typename _Reader::ReturnType DataPage<_RowType, _FormatInfo, _Reader, 
+    _Writer>::row(row_number number, const _FormatInfo& format) const
 {
     if (number >= 0 && number < buffer_->header.rows)
     {
         raw_data row_data = buffer_->data + offset(number);
-        Reader reader;
+        _Reader reader;
         return reader.read(row_data, format);
     }
     else 
@@ -172,11 +181,11 @@ typename Reader::ReturnType DataPage<RowType, FormatInfo, Reader,
 }
 
 
-template <typename RowType, typename FormatInfo, class Reader, class Writer>
-bool DataPage<RowType, FormatInfo, Reader, 
-    Writer>::canFit(const RowType& row) const
+template <typename _RowType, typename _FormatInfo, class _Reader, class _Writer>
+bool DataPage<_RowType, _FormatInfo, _Reader, 
+    _Writer>::canFit(const _RowType& row) const
 {
-    Writer writer;
+    _Writer writer;
     size16 free = buffer_->header.free_space;
     // Dane wiersza + wpis do tablicy offsetow
     size16 required = writer.size(row) + sizeof(page_offset);
@@ -184,9 +193,9 @@ bool DataPage<RowType, FormatInfo, Reader,
 }
 
 
-template <typename RowType, typename FormatInfo, class Reader, class Writer>
-void DataPage<RowType, FormatInfo, Reader, 
-    Writer>::insertOffset_(row_number position, page_offset offset)
+template <typename _RowType, typename _FormatInfo, class _Reader, class _Writer>
+void DataPage<_RowType, _FormatInfo, _Reader, 
+    _Writer>::insertOffset_(row_number position, page_offset offset)
 {
     for (int i = buffer_->header.rows - 1; i >= position; -- i)
     {
@@ -200,15 +209,15 @@ void DataPage<RowType, FormatInfo, Reader,
 }
 
 
-template <typename RowType, typename FormatInfo, class Reader, class Writer>
-void DataPage<RowType, FormatInfo, Reader, 
-    Writer>::insert(const RowType& row, row_number position)
+template <typename _RowType, typename _FormatInfo, class _Reader, class _Writer>
+void DataPage<_RowType, _FormatInfo, _Reader, 
+    _Writer>::insert(const _RowType& row, row_number position)
 {
     if (position >= 0 && position <= buffer_->header.rows)
     {
         page_offset offset = buffer_->header.free_offset;
         
-        Writer writer;
+        _Writer writer;
         size16 written = writer.write(buffer_->data + offset, row);
         
         // Zapisujemy offset do tablicy
@@ -224,9 +233,9 @@ void DataPage<RowType, FormatInfo, Reader,
 }
 
 
-template <typename RowType, typename FormatInfo, class Reader, class Writer>
-void DataPage<RowType, FormatInfo, Reader, 
-    Writer>::erase(row_number position)
+template <typename _RowType, typename _FormatInfo, class _Reader, class _Writer>
+void DataPage<_RowType, _FormatInfo, _Reader, 
+    _Writer>::erase(row_number position)
 {
     if (position >= 0 && position <= buffer_->header.rows)
     {
@@ -265,6 +274,23 @@ void DataPage<RowType, FormatInfo, Reader,
     else 
         throw std::logic_error(util::format("Cannot remove row {}, "
             "{} rows are available", position, buffer_->header.rows));
+}
+
+
+template <typename _RowType, typename _FormatInfo, class _Reader, class _Writer>
+bool DataPage<_RowType, _FormatInfo, _Reader, _Writer>::leaf() const
+{
+    return buffer_->header.flags & static_cast<page_flags>(PageFlags::LEAF);
+}
+
+
+template <typename _RowType, typename _FormatInfo, class _Reader, class _Writer>
+void DataPage<_RowType, _FormatInfo, _Reader, _Writer>::setLeaf(bool is)
+{
+    if (is)
+        buffer_->header.flags |= static_cast<page_flags>(PageFlags::LEAF);
+    else
+        buffer_->header.flags &= ~static_cast<page_flags>(PageFlags::LEAF);
 }
 
 

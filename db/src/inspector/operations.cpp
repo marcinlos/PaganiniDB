@@ -147,7 +147,7 @@ void _print_byte(unsigned char b)
 
 void _print_uv_content(const PageBuffer* page)
 {
-    for (int i = 0; i < PAGES_PER_UV / 8; ++ i)
+    for (unsigned int i = 0; i < PAGES_PER_UV / 8; ++ i)
     {
         if (i % 8 == 0)
             putchar('\n');

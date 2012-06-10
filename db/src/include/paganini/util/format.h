@@ -46,7 +46,7 @@ template <typename... Args>
 inline string format(const string& format, const Args&... args)
 {
     std::ostringstream s;
-    string::size_type pos;
+    string::size_type pos = 0;
     
     // Iterujemy po argumentach - nie bardzo jest jak latwiej
     std::initializer_list<_Notype>{ _aux_use_next(s, format, pos, args)... };

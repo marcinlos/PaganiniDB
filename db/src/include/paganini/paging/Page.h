@@ -7,6 +7,7 @@
  
 #include <paganini/paging/PageBuffer.h>
 #include <paganini/paging/types.h>
+#include <paganini/paging/configuration.h>
 #include <memory>
 
 
@@ -35,6 +36,10 @@ public:
     inline object_id owner() const;
     inline void setOwner(object_id owner);
     
+    // Setter/getter typu
+    inline PageType type() const;
+    inline void setType(PageType type);
+    
     // Setter/getter flag
     inline page_flags flags() const;
     inline void setFlags(page_flags flags);
@@ -48,7 +53,8 @@ public:
     inline void setPrev(page_number prev);
     
     // Zwraca bufor strony
-    inline const PageBuffer& buffer() const;
+    inline const PageBuffer* buffer() const;
+    inline PageBuffer* buffer();
     
     // Zwraca naglowek
     inline const PageHeader& header() const;
@@ -80,6 +86,18 @@ object_id Page::owner() const
 void Page::setOwner(object_id owner)
 {
     buffer_->header.owner = owner;
+}
+
+
+PageType Page::type() const
+{
+    return get_page_type(buffer_->header.flags);
+}
+
+
+void Page::setType(PageType type)
+{
+    set_page_type(buffer_->header.flags, type);
 }
 
 
@@ -119,9 +137,15 @@ void Page::setPrev(page_number prev)
 }
 
 
-const PageBuffer& Page::buffer() const
+PageBuffer* Page::buffer()
 {
-    return *buffer_;
+    return buffer_.get();
+}
+
+
+const PageBuffer* Page::buffer() const
+{
+    return buffer_.get();
 }
 
 
