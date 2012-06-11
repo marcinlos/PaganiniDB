@@ -74,28 +74,28 @@ public:
     void indexTest();
     
 private:
-    RowFormat fmt;
-    Row row;
+    std::shared_ptr<RowFormat> fmt;
+    std::shared_ptr<Row> row;
     
     void setRow(int count, float variance, const string& name,
         const string& surname, const string& description);
 };
 
 Test::Test(): 
-    fmt({ 
+    fmt(new RowFormat { 
         {types::ContentType::Int, "count"}, 
         {types::ContentType::Float, "variance"},
         {{types::ContentType::Char, 14}, "Name"},
         {types::ContentType::VarChar, "Surname"},
         {types::ContentType::VarChar, "Description"}
     }),
-    row(fmt, { 
+    row(new Row(fmt, { 
         new types::Int(432), 
         new types::Float(1.23),
         new types::Char(14, "Aram"),
         new types::VarChar("Khachaturian"),
         new types::VarChar("Kompozytor radziecki")
-    })
+    }))
 {
 }
 
@@ -114,27 +114,27 @@ void Test::databaseCreationTest()
 void Test::setRow(int count, float variance, const string& name,
     const string& surname, const string& description)
 {
-    row["count"] = new types::Int(count);
-    row["variance"] = new types::Float(variance);
-    row["Name"] = new types::Char(14, name);
-    row["Surname"] = new types::VarChar(surname);
-    row["Description"] = new types::VarChar(description);
+    (*row)["count"] = new types::Int(count);
+    (*row)["variance"] = new types::Float(variance);
+    (*row)["Name"] = new types::Char(14, name);
+    (*row)["Surname"] = new types::VarChar(surname);
+    (*row)["Description"] = new types::VarChar(description);
 }
 
 void Test::rowFormatTest()
 {
     std::cout << "Nasz wiersz:" << std::endl;
-    std::cout << fmt << std::endl;
+    std::cout << *fmt << std::endl;
 
     std::cout << "Pola o zmiennym rozmiarze:" << std::endl;
-    auto view = fmt.variable();
+    auto view = fmt->variable();
     for (auto it = view.begin(); it != view.end(); ++ it)
     {
         std::cout << "- " << (*it).name << std::endl;
     }
     std::cout << "Pola o stalym rozmiarze (random access):" << std::endl;
-    auto view2 = fmt.fixed();
-    for (int i = 0; i < fmt.fixedColumnCount(); ++ i)
+    auto view2 = fmt->fixed();
+    for (int i = 0; i < fmt->fixedColumnCount(); ++ i)
     {
         std::cout << "- " << view2[i].name << std::endl;
     }
@@ -143,25 +143,25 @@ void Test::rowFormatTest()
 void Test::rowTest()
 {        
     std::cout << "Wartosci:" << std::endl;
-    for (auto p: row.variable())
+    for (auto p: row->variable())
     {
         std::cout << p->toString() << std::endl;
     }
     
-    std::cout << "Pole 'Name': " << row["Name"]->toString() << std::endl;
-    row["Surname"] = new types::VarChar("Blabla");
+    std::cout << "Pole 'Name': " << (*row)["Name"]->toString() << std::endl;
+    (*row)["Surname"] = new types::VarChar("Blabla");
     std::cout << "Wartosci:" << std::endl;
-    for (std::shared_ptr<types::Data> p: row)
+    for (std::shared_ptr<types::Data> p: *row)
     {
         std::cout << p->toString() << std::endl;
     }
     
     std::cout << "Test zapisywania w pamieci" << std::endl;
-    row["Name"] = nullptr;
+    (*row)["Name"] = nullptr;
     char buffer[PAGE_SIZE] = { 0 };
     RowWriter rw;
-    std::cout << "Przewidywany rozmiar: " << rw.size(row) << std::endl;
-    rw.write(buffer, row);
+    std::cout << "Przewidywany rozmiar: " << rw.size(*row) << std::endl;
+    rw.write(buffer, *row);
     std::cout << "Zrzut pamieci zapisanej przez RowWritera:" << std::endl;
     std::cout << format_bytes(buffer, 300) << std::endl;
     
@@ -173,13 +173,13 @@ void Test::rowTest()
 
 void Test::dataPageTest()
 {
-    DataPage<Row, RowFormat, RowReader, RowWriter> page;
-    page.insert(row, 0);
+    DataPage<Row, std::shared_ptr<const RowFormat>, RowReader, RowWriter> page;
+    page.insert(*row, 0);
     setRow(321, 6.66f, "David", "Hilbert", "Matematyk niemiecki");
-    page.insert(row, 0);
+    page.insert(*row, 0);
     setRow(7788, 1.432f, "Sergiusz", "Prokofiew", 
         "Radziecki kompozytor klasyczny");
-    page.insert(row, 2);
+    page.insert(*row, 2);
     
     std::cout << "Calosc strony:" << std::endl;
     std::cout << format_bytes(page.buffer()->buffer, PAGE_SIZE) << std::endl;
@@ -232,7 +232,7 @@ void Test::indexTest()
         std::cout << *page.row(i, { ContentType::VarChar} ) << std::endl;
     }
     RowIndexer ri(fmt, "Name");
-    RowIndexer::ReturnType index = ri(row, 33);
+    RowIndexer::IndexReturnType index = ri(*row, 33);
     std::cout << "Index: " << *index << std::endl;
 }
 

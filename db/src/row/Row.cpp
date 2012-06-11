@@ -8,12 +8,11 @@ namespace paganini
 {
 
 // Wektor inicjalizujemy nullptr-ami, alokujemy od razu na calosc
-Row::Row(const RowFormat& format, 
-    std::initializer_list<types::Data*> fields,
+Row::Row(FormatPtr format, std::initializer_list<types::Data*> fields,
     row_flags flags):
     
     format_(format), 
-    fields_(format.columnCount(), nullptr),
+    fields_(format->columnCount(), nullptr),
     flags_(flags)
 {
     int i = 0;
@@ -22,9 +21,9 @@ Row::Row(const RowFormat& format,
 }
 
 
-Row::Row(const RowFormat& format, row_flags flags): 
+Row::Row(FormatPtr format, row_flags flags): 
     format_(format), 
-    fields_(format.columnCount(), nullptr),
+    fields_(format->columnCount(), nullptr),
     flags_(flags)
 {
 }
@@ -40,10 +39,10 @@ Row::Row(Row&& other):
 void Row::setField(size16 index, types::Data* data)
 {
     // Najpierw sprawdzamy rozmiar
-    if (index < format_.columnCount())
+    if (index < format_->columnCount())
     {
         // Potem typ
-        const Column& col = format_.columns()[index];
+        const Column& col = format_->columns()[index];
         if (data != nullptr && data->type() != col.type)
         {
             throw std::logic_error(util::format("Types don't match; "
@@ -54,13 +53,13 @@ void Row::setField(size16 index, types::Data* data)
     }
     else
         throw std::logic_error(util::format("Too many fields; row has "
-            "{} columns", format_.columnCount()));    
+            "{} columns", format_->columnCount()));    
 }
 
 
 const RowFormat& Row::format() const
 {
-    return format_;
+    return *format_;
 }
 
 
@@ -100,19 +99,19 @@ Row::const_iterator Row::end() const
 
 size16 Row::columnCount() const
 {
-    return format_.columnCount();
+    return format_->columnCount();
 }
 
 
 size16 Row::fixedColumnCount() const
 {
-    return format_.fixedColumnCount();
+    return format_->fixedColumnCount();
 }
 
 
 size16 Row::variableColumnCount() const
 {
-    return format_.variableColumnCount();
+    return format_->variableColumnCount();
 }
 
 
@@ -125,8 +124,8 @@ const std::vector<Row::DataPtr>& Row::columns() const
 Row::FieldPtrVector Row::fixed() const
 {
     return {
-        format_.fixedIndices().begin(), 
-        format_.fixedIndices().end(), 
+        format_->fixedIndices().begin(), 
+        format_->fixedIndices().end(), 
         fields_.begin()
     };
 }
@@ -135,8 +134,8 @@ Row::FieldPtrVector Row::fixed() const
 Row::FieldPtrVector Row::variable() const
 {
     return {
-        format_.variableIndices().begin(),
-        format_.variableIndices().end(), 
+        format_->variableIndices().begin(),
+        format_->variableIndices().end(), 
         fields_.begin()
     };
 }
@@ -144,7 +143,7 @@ Row::FieldPtrVector Row::variable() const
 
 column_number Row::getColumnNumber(const string& name) const
 {
-    return format_.getColumnNumber(name);
+    return format_->getColumnNumber(name);
 }
 
 

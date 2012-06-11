@@ -18,12 +18,13 @@ class RowReader
 {
 public:
     typedef std::unique_ptr<Row> ReturnType;
+    typedef std::shared_ptr<const RowFormat> FormatPtr;
     
     RowReader();
     
     // Z podanego obszaru pamieci tworzy nowy wiersz w oparciu o podany
     // format i zwraca wskaznik na niego.
-    ReturnType read(raw_data buffer, const RowFormat& format);
+    ReturnType read(raw_data buffer, FormatPtr format);
     
 private:
     FieldFactory& factory;

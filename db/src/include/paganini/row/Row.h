@@ -41,15 +41,17 @@ public:
     typedef typename container::iterator iterator;
     typedef typename container::const_iterator const_iterator;
     
+    typedef std::shared_ptr<const RowFormat> FormatPtr;
+    
     // Proxy do pol - zapobiega ustawieniu nieprawidlowych pol
     class FieldProxy;
     
     // Inicjalizuje wiersz wskaznikami do danych
-    Row(const RowFormat& format, std::initializer_list<types::Data*> fields,
+    Row(FormatPtr format, std::initializer_list<types::Data*> fields, 
         row_flags flags = 0);
     
     // Inicjalizuje wiersz informacja o formacie, bez wartosci
-    Row(const RowFormat& format, row_flags flags = 0);
+    Row(FormatPtr format, row_flags flags = 0);
     
     // Move constructor
     Row(Row&& other);
@@ -107,7 +109,7 @@ public:
     ConstDataPtr operator [] (column_number col) const;
     
 private:
-    const RowFormat& format_;   
+    const FormatPtr format_;   
     container fields_;
     row_flags flags_;    
 };

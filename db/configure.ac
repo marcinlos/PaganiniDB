@@ -27,6 +27,7 @@ AC_SUBST([AM_CXXFLAGS], ['-Wall -std=c++0x'])
 AC_CONFIG_FILES([Makefile 
                  src/Makefile
                  src/error_msg/Makefile
+                 src/util/Makefile
                  src/paging/Makefile
                  src/row/Makefile
                  src/io/Makefile

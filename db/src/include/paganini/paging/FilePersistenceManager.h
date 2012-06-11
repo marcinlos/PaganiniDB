@@ -18,6 +18,8 @@
 #include <paganini/util/format.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <string.h>
+#include <errno.h>
 #include <string>
 using std::string;
 
@@ -113,9 +115,11 @@ template <class Locker>
 void FilePersistenceManager<Locker>::read(page_number number, PageBuffer* page)
 {
     moveToPage_(number);
-    if (::read(fd_, page->buffer, PAGE_SIZE) < PAGE_SIZE)
+    int code = 0;
+    if ((code = ::read(fd_, page->buffer, PAGE_SIZE)) < PAGE_SIZE)
     {
-        throw Exception(util::format("Trying to read page nr {}", number), 
+        throw Exception(util::format("'{}'\nwhile trying to read page nr {}", 
+            code, number), 
             Error::READ);
     }
 }

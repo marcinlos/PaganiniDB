@@ -48,6 +48,7 @@ class DataPage: public Page
 public:
 
     typedef _RowType RowType;
+    typedef typename _Reader::ReturnType ReturnType;
     typedef _FormatInfo FormatInfo;
     
     // Tworzy strone danych z nowym buforem strony

@@ -50,7 +50,7 @@ inline bool isUV(page_number page)
 // lockowania. Wydaje mi sie, ze jest na tyle polaczone z warstwa persystencji,
 // ze nie ma sensu probowac ich rozdzielac w tym miejscu.
 template <class PersistenceManager>
-class PageManager: protected PersistenceManager
+class PageManager: private PersistenceManager
 {
 public:
     PageManager();
@@ -119,13 +119,11 @@ template <class PersistenceManager>
 void PageManager<PersistenceManager>::createHeader_()
 {
     PageBuffer page(0, PageType::HEADER);
-    std::cerr << "PageBuffer stworzony" << std::endl;
+
     // Zapisujemy metadane 
     page.create<DatabaseHeader>("Default DB Name", FIRST_ALLOC);
-    std::cerr << "Zapisane metadane" << std::endl;
         
     writePage(0, &page);
-    std::cerr << "I strona tez" << std::endl;
 }
 
 

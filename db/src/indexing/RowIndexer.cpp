@@ -9,17 +9,17 @@ namespace paganini
 {
 
 
-RowIndexer::RowIndexer(const RowFormat& fmt, column_number column):
-    type_(types::ContentType::None)
+RowIndexer::RowIndexer(FormatPtr fmt, column_number column):
+    type_(types::ContentType::None), format_(fmt)
 {
     fromNumber_(fmt, column);
 }
 
 
-RowIndexer::RowIndexer(const RowFormat& fmt, const string& name):
-    type_(types::ContentType::None)
+RowIndexer::RowIndexer(FormatPtr fmt, const string& name):
+    type_(types::ContentType::None), format_(fmt)
 {
-    column_ = fmt.getColumnNumber(name);
+    column_ = fmt->getColumnNumber(name);
     if (column_ >= 0)
         fromNumber_(fmt, column_);
     else
@@ -28,12 +28,12 @@ RowIndexer::RowIndexer(const RowFormat& fmt, const string& name):
 }
 
 
-void RowIndexer::fromNumber_(const RowFormat& fmt, column_number column)
+void RowIndexer::fromNumber_(FormatPtr fmt, column_number column)
 {
-    if (column < fmt.columnCount())
+    if (column < fmt->columnCount())
     {
         column_ = column;
-        const Column& col = fmt[column];
+        const Column& col = (*fmt)[column];
         type_ = col.type;
         ComparatorFactory& factory = ComparatorFactory::getInstance();
         comparator_ = factory.get(type_.content);
@@ -42,14 +42,14 @@ void RowIndexer::fromNumber_(const RowFormat& fmt, column_number column)
     else 
         throw std::logic_error(util::format("Trying to create index on column "
             "nr {}, which does not exist; {} columns are available", 
-            column, fmt.columnCount()));
+            column, fmt->columnCount()));
 }
 
 
-RowIndexer::ReturnType RowIndexer::operator ()(const Row& a, 
-    page_number dest) const
+RowIndexer::IndexReturnType 
+RowIndexer::operator ()(const Row& a, page_number dest) const
 {
-    return ReturnType(new Index(type_, a[column_], dest));
+    return IndexReturnType(new Index(type_, a[column_], dest));
 }
 
 

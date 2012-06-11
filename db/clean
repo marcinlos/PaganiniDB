@@ -12,5 +12,5 @@ rm -rf ${FILELIST}
 
 rm src/insp
 rm src/test
-rm src/treetest
+rm src/dbshell
 rm db

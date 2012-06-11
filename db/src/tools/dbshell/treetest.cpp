@@ -25,57 +25,29 @@
 #include <sstream>
 using namespace paganini;
 
-inline char hex_digit(int i)
-{
-    return i < 10 ? i + '0' : i - 10 + 'A';
-}
+typedef 
+BTree<
+    PageManager<FilePersistenceManager<DummyLocker>>,
+    RowIndexer,
+    DataPage<Index, types::FieldType, IndexReader, IndexWriter>,
+    DataPage<Row, std::shared_ptr<const RowFormat>, RowReader, RowWriter>
+>
+Table;
 
-inline unsigned char make_ascii(unsigned char c)
-{
-    return c == '\0' ? '.' : (c < ' ' ? ' ' : c);
-}
 
-string format_bytes(const_raw_data data, size16 len, size16 in_line = 16)
-{
-    std::ostringstream ss;
-    // int lines = (len + in_line - 1) / in_line;
-    for (unsigned int i = 0; i < len / in_line; ++ i)
-    {
-        typedef const unsigned char* bytes;
-        ss << std::setw(4) << std::hex << i * in_line << " |";
-        bytes d = reinterpret_cast<bytes>(data + i * in_line);
-        for (int j = 0; j < in_line; ++ j)
-        {
-            ss << hex_digit((d[j] & 0xf0) >> 4);
-            ss << hex_digit(d[j] & 0x0f);
-            if (j != in_line - 1)
-            {
-                ss << ' '; 
-                if ((j + 1) % 2 == 0)
-                    ss << ' ';
-            }
-        }
-        ss << " | ";
-        for (int j = 0; j < in_line; ++ j)
-        {
-            ss << make_ascii(d[j]);
-        }
-        ss << std::endl;
-    }
-    return ss.str();
-}
 
 class Test
 {    
 public:
     Test();
+    ~Test();
     void databaseCreationTest();
     
     void userLoop();
     
 private:
-    RowFormat fmt;
-    Row row;
+    std::shared_ptr<RowFormat> fmt;
+    std::shared_ptr<Row> row;
     PageManager<FilePersistenceManager<DummyLocker>> manager;
     
     void setRow(int count, float variance, const string& name,
@@ -83,41 +55,68 @@ private:
 };
 
 Test::Test(): 
-    fmt({ 
+    fmt(new RowFormat { 
         {types::ContentType::Int, "count"}, 
         {types::ContentType::Float, "variance"},
         {{types::ContentType::Char, 14}, "Name"},
         {types::ContentType::VarChar, "Surname"},
         {types::ContentType::VarChar, "Description"}
     }),
-    row(fmt, { 
+    row(new Row(fmt, { 
         new types::Int(432), 
         new types::Float(1.23),
         new types::Char(14, "Aram"),
         new types::VarChar("Khachaturian"),
         new types::VarChar("Kompozytor radziecki")
-    })
+    }))
 {
+    using namespace types;
     manager.createFile("db");
     manager.openFile("db");
+
+    RowIndexer indexer(fmt, 3);
+    Index idx( { ContentType::VarChar }, 
+        Index::DataPtr(new VarChar("Dupa")), 99);
 
     BTree<
         PageManager<FilePersistenceManager<DummyLocker>>,
         RowIndexer,
         DataPage<Index, types::FieldType, IndexReader, IndexWriter>,
-        DataPage<Row, RowFormat, RowReader, RowWriter>
-    > tree(manager, -1, RowIndexer(fmt, 4));
+        DataPage<Row, std::shared_ptr<const RowFormat>, RowReader, RowWriter>
+    > tree(manager, -1, indexer);
+    
+    for (int i = 0; i < 100050; ++ i)
+    {
+        (*row)["count"] = new Int(i);
+        tree.insert(*row);
+    }
+        
+    (*row)["Surname"] = new VarChar("Dupa");
+    (*row)["count"] = new Int(3999);
+    tree.insert(*row);
+    (*row)["Surname"] = new VarChar("Khachaturian");
     
     for (int i = 0; i < 1050; ++ i)
-        tree.insert(row);
+        tree.insert(*row);
+        
+    std::cout << "Szukamy: " << std::endl; 
+    std::cout << *tree.find(idx) << std::endl;
+
+    PageBuffer page;
+    manager.readPage(0, &page);
+    inspect::InfoFormatter fmt;
+    std::cout << fmt(*page.get<DatabaseHeader>()) << std::endl;
+}
+
+
+Test::~Test()
+{
+    manager.closeFile();
 }
 
 
 void Test::databaseCreationTest()
 {
-
-        
-
 
     //manager.closeFile();
 }
@@ -125,11 +124,11 @@ void Test::databaseCreationTest()
 void Test::setRow(int count, float variance, const string& name,
     const string& surname, const string& description)
 {
-    row["count"] = new types::Int(count);
-    row["variance"] = new types::Float(variance);
-    row["Name"] = new types::Char(14, name);
-    row["Surname"] = new types::VarChar(surname);
-    row["Description"] = new types::VarChar(description);
+    (*row)["count"] = new types::Int(count);
+    (*row)["variance"] = new types::Float(variance);
+    (*row)["Name"] = new types::Char(14, name);
+    (*row)["Surname"] = new types::VarChar(surname);
+    (*row)["Description"] = new types::VarChar(description);
 }
 
 

@@ -40,7 +40,7 @@ inline string page_flags_str(page_flags flags)
     bool first = true;
     
     if (flags & page_flags(PageFlags::LEAF))
-        os << (first ? "" : " | ") << PageFlags::LEAF;
+        os << (first ? (first = false, "") : " | ") << PageFlags::LEAF;
         
     if (first)
         os << "None";

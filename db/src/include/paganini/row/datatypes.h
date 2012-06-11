@@ -15,6 +15,7 @@
 #include <paganini/util/format.h>
 #include <string>
 #include <vector>
+#include <sstream>
 #include <functional>
 using std::string;
 
@@ -123,6 +124,10 @@ public:
     // znaczenie wylacznie dla typow zmiennej wielkosci.
     virtual void readFrom(InputBinaryStream& stream, size16 size = 0) = 0;
     
+    // Wczytuje dane w formie tekstowej z podanego stringa. Zwraca true,
+    // jesli sie udalo i false, jesli format stringa byl niewlasciwy.
+    virtual bool readFrom(const string& str) = 0;
+    
     // Zwraca rozmiar tej konkretnej instancji typu danych.
     virtual size16 size() const = 0; 
     
@@ -165,6 +170,20 @@ public:
     {
         stream.read(&val);
     }
+    
+    bool readFrom(const string& str)
+    {
+        std::stringstream ss(str);
+        Value copy;;
+        ss >> copy;
+        if (! ss)
+            return false;
+        else
+        {
+            val = copy;
+            return true;
+        }
+    }
 
     size16 size() const { return sizeof(val); }
     
@@ -206,7 +225,20 @@ public:
     
     void readFrom(InputBinaryStream& stream, size16 size = 0)
     {
+        val.assign(max_length, '\0');
         stream.readRange(val.begin(), max_length);
+    }
+    
+    bool readFrom(const string& str)
+    {
+        if (str.length() <= max_length)
+        {
+            val.assign(max_length, '\0');
+            std::copy(str.begin(), str.end(), val.begin());
+            return true;
+        }
+        else
+            return false;
     }
     
     size16 size() const { return max_length; }
@@ -240,6 +272,12 @@ public:
     {
         val.resize(size);
         stream.readRange(val.begin(), size);
+    }
+    
+    bool readFrom(const string& str)
+    {
+        val = str;
+        return true;
     }
     
     size16 size() const { return val.size(); }
