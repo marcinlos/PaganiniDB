@@ -29,6 +29,11 @@ Column::Column(const Column& other): name(other.name), col(other.col),
 }
 
 
+RowFormat::RowFormat()
+{
+}
+
+
 RowFormat::RowFormat(const std::vector<Column>& cols)
 {
     for (const Column& c: cols)

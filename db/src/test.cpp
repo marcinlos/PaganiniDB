@@ -167,7 +167,7 @@ void Test::rowTest()
     
     RowReader rr;
     std::cout << "Wiersz odczytany z powrotem przez RowReadera:" << std::endl;
-    std::cout << *rr.read(buffer, fmt);
+    std::cout << rr.read(buffer, fmt);
 }
 
 
@@ -191,7 +191,7 @@ void Test::dataPageTest()
     {
         std::cout << "Wiersz nr " << i << " (offset: " 
             << page.offset(i) << ")" << std::endl;
-        std::cout << *page.row(i, fmt) << std::endl;
+        std::cout << page.row(i, fmt) << std::endl;
     }
 }
 
@@ -229,11 +229,11 @@ void Test::indexTest()
     {
         std::cout << "Wiersz nr " << i << " (offset: " 
             << page.offset(i) << ")" << std::endl;
-        std::cout << *page.row(i, { ContentType::VarChar} ) << std::endl;
+        std::cout << page.row(i, { ContentType::VarChar} ) << std::endl;
     }
     RowIndexer ri(fmt, "Name");
-    RowIndexer::IndexReturnType index = ri(*row, 33);
-    std::cout << "Index: " << *index << std::endl;
+    RowIndexer::IndexType index = ri(*row, 33);
+    std::cout << "Index: " << index << std::endl;
 }
 
 

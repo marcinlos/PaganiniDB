@@ -27,6 +27,7 @@
 
 #include <paganini/paging/types.h>
 #include <memory>
+#include <vector>
 
 #include <iostream>
 
@@ -46,9 +47,7 @@ public:
     static const page_number ALLOC_NEW = -1;
     
     typedef typename _IndexPage::RowType IndexType;
-    typedef typename _IndexPage::ReturnType IndexReturnType;
     typedef typename _DataPage::RowType RowType;
-    typedef typename _DataPage::ReturnType RowReturnType;
     
     
     // Tworzy nowe B+ drzewo oparte na podanym systemie stronnicowania.
@@ -62,7 +61,28 @@ public:
     bool insert(const RowType& row);
     
     // Wyszukuje wiersz
-    RowReturnType find(const IndexType& key) const;
+    RowType find(const IndexType& key) const;
+    
+    std::vector<RowType> all() const
+    {
+        std::vector<RowType> rows;
+        _DataPage page;
+        page_number page_num = root_;
+        while (true)
+        {
+            pager_.readPage(page_num, page.buffer());
+            
+            for (unsigned i = 0; i < page.rowCount(); ++ i)
+            {
+                rows.push_back(page.row(i, indexer_.rowFormat()));
+            }
+            if (page_num == end_)
+                break;
+            else
+                page_num = page.next();
+        }
+        return rows;
+    }
     
     const _Indexer& indexer() const { return indexer_; }
 
@@ -123,7 +143,7 @@ void BTree<_PagingSystem, _Indexer, _IndexPage,
 
 
 template <class _PagingSystem, class _Indexer, class _IndexPage, class _DataPage>
-typename BTree<_PagingSystem, _Indexer, _IndexPage, _DataPage>::RowReturnType
+typename BTree<_PagingSystem, _Indexer, _IndexPage, _DataPage>::RowType
 BTree<_PagingSystem, _Indexer, _IndexPage, 
     _DataPage>::find(const IndexType& key) const
 {
@@ -135,10 +155,10 @@ BTree<_PagingSystem, _Indexer, _IndexPage,
         
         for (unsigned i = 0; i < page.rowCount(); ++ i)
         {
-            RowReturnType row = page.row(i, indexer_.rowFormat());
-            IndexReturnType index = indexer_(*row);
+            RowType row = page.row(i, indexer_.rowFormat());
+            IndexType index = indexer_(row);
             
-            if (indexer_(key, *index) == 0)
+            if (indexer_(key, index) == 0)
             {
                 return row; 
             }
@@ -148,7 +168,7 @@ BTree<_PagingSystem, _Indexer, _IndexPage,
         else
             page_num = page.next();
     }
-    return RowReturnType();
+    return RowType();
 }
 
 

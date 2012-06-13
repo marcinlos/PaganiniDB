@@ -48,7 +48,6 @@ class DataPage: public Page
 public:
 
     typedef _RowType RowType;
-    typedef typename _Reader::ReturnType ReturnType;
     typedef _FormatInfo FormatInfo;
     
     // Tworzy strone danych z nowym buforem strony
@@ -89,7 +88,7 @@ public:
     inline const_raw_data rowData(row_number number) const;
     
     // Zwraca obiekt reprezetujacy wiersz o podanym numerze
-    typename _Reader::ReturnType row(row_number number, 
+    typename _Reader::DataType row(row_number number, 
         const _FormatInfo& format) const;
     
 private:   
@@ -167,7 +166,7 @@ const_raw_data DataPage<_RowType, _FormatInfo, _Reader,
 
 
 template <typename _RowType, typename _FormatInfo, class _Reader, class _Writer>
-typename _Reader::ReturnType DataPage<_RowType, _FormatInfo, _Reader, 
+typename _Reader::DataType DataPage<_RowType, _FormatInfo, _Reader, 
     _Writer>::row(row_number number, const _FormatInfo& format) const
 {
     if (number >= 0 && number < buffer_->header.rows)

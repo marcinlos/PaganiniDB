@@ -15,12 +15,12 @@ namespace paganini
 class IndexReader
 {
 public:
-    typedef std::unique_ptr<Index> ReturnType;
+    typedef Index DataType;
     
     IndexReader();
     
     // Wczytuje z pamieci strukture pojedynczego wpisu indeksowego
-    ReturnType read(raw_data buffer, types::FieldType format);
+    DataType read(raw_data buffer, types::FieldType format);
     
 private:
     FieldFactory& factory;

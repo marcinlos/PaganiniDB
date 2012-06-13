@@ -11,7 +11,7 @@ IndexReader::IndexReader(): factory(FieldFactory::getInstance())
 }
 
 
-IndexReader::ReturnType IndexReader::read(raw_data buffer, 
+IndexReader::DataType IndexReader::read(raw_data buffer, 
     types::FieldType format)
 {
     typedef std::unique_ptr<types::Data> DataPtr;     
@@ -26,8 +26,7 @@ IndexReader::ReturnType IndexReader::read(raw_data buffer,
         
     DataPtr value = factory.create(format);
     value->readFrom(stream, size);
-    return ReturnType(new Index(format, 
-        Index::ConstDataPtr(value.release()), child));
+    return DataType(format, Index::ConstDataPtr(value.release()), child);
 }
 
 

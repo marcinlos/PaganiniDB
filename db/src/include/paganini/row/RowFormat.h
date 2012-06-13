@@ -68,6 +68,9 @@ public:
         
     // typedef std::vector<Column>::iterator iterator;
     typedef std::vector<Column>::const_iterator const_iterator;
+    
+    // Konstruktor domyslny, tworzy pusty format wiersza
+    RowFormat();
 
     // Inicjalizuje format wiersza z wektora opisow kolumn
     RowFormat(const std::vector<Column>& cols);

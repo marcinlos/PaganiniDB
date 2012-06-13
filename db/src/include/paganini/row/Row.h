@@ -46,15 +46,35 @@ public:
     // Proxy do pol - zapobiega ustawieniu nieprawidlowych pol
     class FieldProxy;
     
+    // Pusty, niezdatny do uzycia wiersz
+    Row();
+    
     // Inicjalizuje wiersz wskaznikami do danych
-    Row(FormatPtr format, std::initializer_list<types::Data*> fields, 
+    Row(FormatPtr format, const std::vector<types::Data*>& fields, 
         row_flags flags = 0);
     
     // Inicjalizuje wiersz informacja o formacie, bez wartosci
     Row(FormatPtr format, row_flags flags = 0);
     
+    // Copy constructor
+    Row(const Row& other);
+    
     // Move constructor
     Row(Row&& other);
+    
+    // Operator przypisania
+    Row& operator = (const Row& other);
+    
+    // Operator move-przypisania
+    Row& operator = (Row&& other);
+    
+    // Zwraca nullptr jesli wiersz jest poprawny, false jesli jest pusty.
+    // To + operator ! ze wzgledu na fakt, ze mamy przeciazony rowniez
+    // [] dla stringa, i wywolanie row["string"] moze odwolywac sie tak
+    // do niego, jak i wbudowanego, choc malo znanego, operatora postaci
+    // offset[adres].
+    operator const void* () const;
+    bool operator ! () const;
     
     // Ustawia podane pole na zadana wartosc
     void setField(size16 index, types::Data* data);   
@@ -109,7 +129,9 @@ public:
     ConstDataPtr operator [] (column_number col) const;
     
 private:
-    const FormatPtr format_;   
+    void swap_(Row&& other);
+
+    FormatPtr format_;   
     container fields_;
     row_flags flags_;    
 };

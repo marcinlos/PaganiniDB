@@ -9,14 +9,14 @@ namespace paganini
 {
 
 
-RowIndexer::RowIndexer(FormatPtr fmt, column_number column):
+RowIndexer::RowIndexer(RowFormatInfo fmt, column_number column):
     type_(types::ContentType::None), format_(fmt)
 {
     fromNumber_(fmt, column);
 }
 
 
-RowIndexer::RowIndexer(FormatPtr fmt, const string& name):
+RowIndexer::RowIndexer(RowFormatInfo fmt, const string& name):
     type_(types::ContentType::None), format_(fmt)
 {
     column_ = fmt->getColumnNumber(name);
@@ -28,7 +28,7 @@ RowIndexer::RowIndexer(FormatPtr fmt, const string& name):
 }
 
 
-void RowIndexer::fromNumber_(FormatPtr fmt, column_number column)
+void RowIndexer::fromNumber_(RowFormatInfo fmt, column_number column)
 {
     if (column < fmt->columnCount())
     {
@@ -46,10 +46,10 @@ void RowIndexer::fromNumber_(FormatPtr fmt, column_number column)
 }
 
 
-RowIndexer::IndexReturnType 
+RowIndexer::IndexType 
 RowIndexer::operator ()(const Row& a, page_number dest) const
 {
-    return IndexReturnType(new Index(type_, a[column_], dest));
+    return IndexType(type_, a[column_], dest);
 }
 
 

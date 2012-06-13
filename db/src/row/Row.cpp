@@ -7,8 +7,14 @@
 namespace paganini
 {
 
+
+Row::Row(): format_(nullptr)
+{
+}
+
+
 // Wektor inicjalizujemy nullptr-ami, alokujemy od razu na calosc
-Row::Row(FormatPtr format, std::initializer_list<types::Data*> fields,
+Row::Row(FormatPtr format, const std::vector<types::Data*>& fields,
     row_flags flags):
     
     format_(format), 
@@ -29,10 +35,53 @@ Row::Row(FormatPtr format, row_flags flags):
 }
 
 
+Row::Row(const Row& other):
+    format_(other.format_),
+    fields_(other.fields_),
+    flags_(other.flags_)
+{
+}
+
+
 Row::Row(Row&& other): 
     format_(other.format_),
-    fields_(std::move(other.fields_))
+    fields_(std::move(other.fields_)),
+    flags_(other.flags_)
 {
+}
+
+
+void Row::swap_(Row&& other)
+{
+    format_ = other.format_;
+    fields_ = std::move(other.fields_);
+    flags_ = other.flags_;
+}
+
+
+Row& Row::operator = (const Row& other)
+{
+    swap_(Row(other));
+    return *this;
+}
+
+
+Row& Row::operator = (Row&& other)
+{
+    swap_(std::move(other));
+    return *this;
+}
+
+
+Row::operator const void*() const
+{
+    return format_.get();
+}
+
+
+bool Row::operator ! () const
+{
+    return format_ != nullptr;
 }
 
 
