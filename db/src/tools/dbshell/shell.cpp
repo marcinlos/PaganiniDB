@@ -4,9 +4,12 @@
 #include <iostream>
 
 
-int main()
+int main(int argc, char* argv[])
 {
-    paganini::shell::Interpreter interpreter;
+    bool read = true;
+    if (argc >= 2 && strcmp(argv[1], "new"))
+        read = false;
+    paganini::shell::Interpreter interpreter(read);
     
     std::string line;
     while (std::getline(std::cin, line))
@@ -26,3 +29,4 @@ int main()
         }
     }
 }
+

@@ -4,23 +4,12 @@
       _DataPage::RowType 
          Typ podstawowy wiersza danych. Jest przyjmowany jako argument przy 
          wstawianiu, powinny przyjmowac go funkcje porownujace _Indexer-a, 
-         przyjmowac do zapisu _DataPage.
-         
-      _DataPage::ReturnRowType
-         Typ 'wskaznikowy' wiersza danych. Jest zwracany przez funkcje
-         _DataPage::row. Rezultat jego dereferencji powinien byc mozliwy do
-         uzywania jako _DataPage::RowType. Jest rowniez zwracany jako wynik
-         wyszukiwania. Jego domyslna wartosc jest zwracana, gdy wiersz
-         nie zostal odnaleziony.
+         przyjmowac do zapisu _DataPage. Jest zwracany przez funkcje 
+         wyszukujace.
          
       _IndexPage::RowType
          Typ podstawowy indeksu. Jest przyjmowany przez funkcje porownujace
          _Indexer-a, oraz jako argument zapisu dla _IndexPage.
-         
-      _IndexPage::ReturnType
-         Typ 'wskaznikowy' wiersza danych. Jest zwracany przez _IndexPage::row
-         oraz przez operator wywolania _Indexer-a. Jego dereferencja jest 
-         uzywana tam, gdzie potrzebny jest _IndexPage::RowType.
 */
 #ifndef __PAGANINI_INDEXING_BTREE_H__
 #define __PAGANINI_INDEXING_BTREE_H__
@@ -49,6 +38,21 @@ public:
     typedef typename _IndexPage::RowType IndexType;
     typedef typename _DataPage::RowType RowType;
     
+    struct RowIterator
+    {
+        page_number page;
+        row_number row;
+        
+        RowIterator(page_number page = NULL_PAGE, row_number row = 0):
+            page(page), row(row)
+        {
+        }
+        
+        operator bool () const
+        {
+            return page != NULL_PAGE;
+        }
+    };
     
     // Tworzy nowe B+ drzewo oparte na podanym systemie stronnicowania.
     // Jego korzen jest zapisywany do strony o numerze root. Jesli
@@ -56,14 +60,88 @@ public:
     // systemu stronnicowania.
     explicit BTree(_PagingSystem& pager, page_number root = ALLOC_NEW,
         const _Indexer& indexer = _Indexer());
+       
+       
+    // Zwraca numer strony korzenia
+    page_number root() const
+    {
+        return root_;
+    }
+    
     
     // Dodaje wiersz do drzewa
     bool insert(const RowType& row);
     
     // Wyszukuje wiersz
-    RowType find(const IndexType& key) const;
+    RowType find(const IndexType& key) const
+    {
+        RowIterator iter = findFirst(key);
+        _DataPage page;
+        if (iter)
+        {
+            pager_.readPage(iter.page, page.buffer());
+            return page.row(iter.row);
+        }
+        else
+            return RowType();
+    }
     
-    std::vector<RowType> all() const
+    template <typename _OutIter>
+    void readRange(RowIterator first, const IndexType& key, _OutIter out) const
+    {
+        _DataPage page;
+        page_number page_num = first.page;
+
+        pager_.readPage(page_num, page.buffer());
+        for (int i = first.row; i < page.rowCount(); ++ i)
+        {
+            RowType row = page.row(i, indexer_.rowFormat());
+            IndexType index = indexer_(row);
+            if (indexer_(key, index) != 0)
+                break;
+            *out ++ = row;
+        }
+        page_num = page.next();
+        while (page_num != NULL_PAGE)
+        {
+            pager_.readPage(page_num, page.buffer());
+            for (unsigned i = 0; i < page.rowCount(); ++ i)
+            {
+                RowType row = page.row(i, indexer_.rowFormat());
+                IndexType index = indexer_(row);
+                if (indexer_(key, index) != 0)
+                    return;
+                *out ++ = row;
+            }
+        }
+    }
+     
+    RowIterator findFirst(const IndexType& key) const
+    {
+         _DataPage page;
+        page_number page_num = root_;
+        while (true)
+        {
+            pager_.readPage(page_num, page.buffer());
+            
+            for (size16 i = 0; i < page.rowCount(); ++ i)
+            {
+                RowType row = page.row(i, indexer_.rowFormat());
+                IndexType index = indexer_(row);
+                
+                if (indexer_(key, index) == 0)
+                    return { page_num, i }; 
+            }
+            if (page_num == end_)
+                break;
+            else
+                page_num = page.next();
+        }  
+        return { NULL_PAGE, 0 };
+    }
+    
+    template <typename _OutIter>
+    void fetchAll(_OutIter out) const
     {
         std::vector<RowType> rows;
         _DataPage page;
@@ -73,15 +151,21 @@ public:
             pager_.readPage(page_num, page.buffer());
             
             for (unsigned i = 0; i < page.rowCount(); ++ i)
-            {
-                rows.push_back(page.row(i, indexer_.rowFormat()));
-            }
+                *out ++ = page.row(i, indexer_.rowFormat());
+
             if (page_num == end_)
                 break;
             else
                 page_num = page.next();
         }
-        return rows;
+    }
+    
+    template <typename _OutIter>
+    void findRange(const IndexType& key, _OutIter out) const
+    {
+        RowIterator i = findFirst(key);
+        if (i)
+            readRange(i, key, out);
     }
     
     const _Indexer& indexer() const { return indexer_; }
@@ -142,34 +226,6 @@ void BTree<_PagingSystem, _Indexer, _IndexPage,
 }
 
 
-template <class _PagingSystem, class _Indexer, class _IndexPage, class _DataPage>
-typename BTree<_PagingSystem, _Indexer, _IndexPage, _DataPage>::RowType
-BTree<_PagingSystem, _Indexer, _IndexPage, 
-    _DataPage>::find(const IndexType& key) const
-{
-    _DataPage page;
-    page_number page_num = root_;
-    while (true)
-    {
-        pager_.readPage(page_num, page.buffer());
-        
-        for (unsigned i = 0; i < page.rowCount(); ++ i)
-        {
-            RowType row = page.row(i, indexer_.rowFormat());
-            IndexType index = indexer_(row);
-            
-            if (indexer_(key, index) == 0)
-            {
-                return row; 
-            }
-        }
-        if (page_num == end_)
-            break;
-        else
-            page_num = page.next();
-    }
-    return RowType();
-}
 
 
 }

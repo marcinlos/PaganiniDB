@@ -20,7 +20,8 @@ public:
     typedef std::shared_ptr<types::Data> DataPtr;
     typedef std::shared_ptr<const types::Data> ConstDataPtr;
      
-    Index(const types::FieldType& type, ConstDataPtr value, page_number child);
+    Index(const types::FieldType& type, ConstDataPtr value, 
+        page_number child = 0);
 
     // Zwraca przechowywana wartosc indeksu
     inline ConstDataPtr value() const;

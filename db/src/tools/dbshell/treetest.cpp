@@ -1,172 +1,105 @@
 #include "config.h"
-#include <paganini/paging/Page.h>
-#include <paganini/paging/PageManager.h>
-#include <paganini/paging/FilePersistenceManager.h>
-#include <paganini/paging/DummyLocker.h>
-#include <paganini/Error.h>
-#include <paganini/row/datatypes.h>
-#include <paganini/row/RowFormat.h>
-#include <paganini/row/Row.h>
-#include <paganini/row/RowWriter.h>
-#include <paganini/row/RowReader.h>
-#include <paganini/row/FieldFactory.h>
-#include <paganini/paging/DataPage.h>
-#include <paganini/row/Comparator.h>
-#include <paganini/indexing/ComparatorFactory.h>
-#include <paganini/indexing/Index.h>
-#include <paganini/indexing/IndexReader.h>
-#include <paganini/indexing/IndexWriter.h>
-#include <paganini/indexing/RowIndexer.h>
 #include <paganini/indexing/BTree.h>
 #include <paganini/inspect/InfoFormatter.h>
-#include <cstdio>
 #include <iostream>
 #include <iomanip>
+#include <vector>
+#include <array>
 #include <sstream>
+#include <string>
 using namespace paganini;
+using std::string;
 
-typedef 
-BTree<
-    PageManager<FilePersistenceManager<DummyLocker>>,
-    RowIndexer,
-    DataPage<Index, types::FieldType, IndexReader, IndexWriter>,
-    DataPage<Row, std::shared_ptr<const RowFormat>, RowReader, RowWriter>
->
-Table;
+namespace paganini
+{
+namespace mock
+{
 
-
-
-class Test
-{    
-public:
-    Test();
-    ~Test();
-    void databaseCreationTest();
-    
-    void userLoop();
-    
-private:
-    std::shared_ptr<RowFormat> fmt;
-    std::shared_ptr<Row> row;
-    PageManager<FilePersistenceManager<DummyLocker>> manager;
-    
-    void setRow(int count, float variance, const string& name,
-        const string& surname, const string& description);
+// Mockowate obiekty
+struct MockRow
+{
+    int key;
+    string value;
 };
 
-Test::Test(): 
-    fmt(new RowFormat { 
-        {types::ContentType::Int, "count"}, 
-        {types::ContentType::Float, "variance"},
-        {{types::ContentType::Char, 14}, "Name"},
-        {types::ContentType::VarChar, "Surname"},
-        {types::ContentType::VarChar, "Description"}
-    }),
-    row(new Row(fmt, { 
-        new types::Int(432), 
-        new types::Float(1.23),
-        new types::Char(14, "Aram"),
-        new types::VarChar("Khachaturian"),
-        new types::VarChar("Kompozytor radziecki")
-    }))
+template <typename T>
+struct MockDataPage
 {
-    using namespace types;
-    manager.createFile("db");
-    manager.openFile("db");
-
-    RowIndexer indexer(fmt, 3);
-    Index idx( { ContentType::VarChar }, 
-        Index::DataPtr(new VarChar("Dupa")), 99);
-
-    BTree<
-        PageManager<FilePersistenceManager<DummyLocker>>,
-        RowIndexer,
-        DataPage<Index, types::FieldType, IndexReader, IndexWriter>,
-        DataPage<Row, std::shared_ptr<const RowFormat>, RowReader, RowWriter>
-    > tree(manager, -1, indexer);
+    static int MAX_IN_ROW = 7;
+    std::vector<T> rows;
     
-    for (int i = 0; i < 100050; ++ i)
+    int prev, next;
+    
+    T row(int i) { return rows[i]; }
+    int rowFormat() const { return 0; }
+    
+    MockDataPage(): prev(NULL_PAGE), next(NULL_PAGE) { }
+    int rowFormat() { return 0; }
+    
+    //bool canFit(const T& t) { 
+};
+
+
+struct MockIndexer
+{
+    typedef RowType T;
+    typedef int IndexType;
+    
+    int operator () (const T& row, int n = 0)
     {
-        (*row)["count"] = new Int(i);
-        tree.insert(*row);
+        return row.key;
     }
-        
-    (*row)["Surname"] = new VarChar("Dupa");
-    (*row)["count"] = new Int(3999);
-    tree.insert(*row);
-    (*row)["Surname"] = new VarChar("Khachaturian");
+};
+
+
+struct PagingSystemMock
+{
+    static const size16 SIZE = 64;
+    std::vector<std::array<char, SIZE>> pages;
+    std::vector<bool> usage;
     
-    for (int i = 0; i < 1050; ++ i)
-        tree.insert(*row);
-        
-    std::cout << "Szukamy: " << std::endl; 
-    std::cout << *tree.find(idx) << std::endl;
+    void createFile(const string& path){}
 
-    PageBuffer page;
-    manager.readPage(0, &page);
-    inspect::InfoFormatter fmt;
-    std::cout << fmt(*page.get<DatabaseHeader>()) << std::endl;
-}
+    void openFile(const string& path){}
 
-
-Test::~Test()
-{
-    manager.closeFile();
-}
-
-
-void Test::databaseCreationTest()
-{
-
-    //manager.closeFile();
-}
-
-void Test::setRow(int count, float variance, const string& name,
-    const string& surname, const string& description)
-{
-    (*row)["count"] = new types::Int(count);
-    (*row)["variance"] = new types::Float(variance);
-    (*row)["Name"] = new types::Char(14, name);
-    (*row)["Surname"] = new types::VarChar(surname);
-    (*row)["Description"] = new types::VarChar(description);
-}
-
-
-void Test::userLoop()
-{
-    string line;
-    while (std::getline(std::cin, line))
+    void closeFile() {}
+    
+    void readPage(page_number number, char* buffer)
     {
-        std::stringstream ss;
-        ss << line;
-        int n;
-        ss >> n;
-        if (ss)
+        std::copy(pages[number].begin(), pages[number].end(), buffer);
+    }
+
+    void writePage(page_number number, const char* buffer)
+    {
+        std::copy(buffer, buffer + SIZE, pages[number].begin());
+    }
+    
+    page_nubmer allocPage()
+    {
+        for (unsigned i = 0; i < usage.size(); ++ i)
         {
-            PageBuffer page;
-            manager.readPage(n, &page);
-            inspect::InfoFormatter fmt;
-            std::cout << std::endl << fmt(page) << std::endl;
+            if (! usage[i])
+            {
+                usage[i] = true;
+                return i;
+            }
         }
+        pages.push_back((std::array<char, SIZE>));
+        usage.push_back(true);
+        return pages.size() - 1;
     }
-}
+};
+
+struct test
+{
+    template <typename T>
+    T operator (int a) const { return T() + a; }
+};
 
 
 int main()
 {
-    try
-    {     
-        Test test;  
-        
-        test.userLoop();
-    }
-    catch (paganini::Exception& e)
-    {
-        printf("%s\n%s\n", e.what(), e.getCodeMessage());
-    }
-    catch (std::exception& e)
-    {
-        printf("%s\n", e.what());
-    }
+    test t;
+    std::cout << text<int>(7);
     return 0;
 }

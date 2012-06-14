@@ -3,6 +3,7 @@
 
 #include <paganini/util/lexer/Tokenizer.h>
 #include <paganini/util/lexer/Lexer.h>
+#include <paganini/util/lexer/TokenSequence.h>
 #include <paganini/util/format.h>
 #include <paganini/row/RowFormat.h>
 #include <paganini/row/Row.h>
@@ -83,7 +84,7 @@ private:
     std::unordered_map<string, std::shared_ptr<TableTree>> tables_;
     
 public:
-    Interpreter()
+    Interpreter(bool read)
     {
         using types::ContentType;
         
@@ -101,8 +102,9 @@ public:
             {ContentType::PageNumber, "*/
         });
         
-        tables_.insert(std::make_pair(/*"Tables"*/"Example", new TableTree(pageManager_, 
-            2/*TableTree::ALLOC_NEW*/, RowIndexer(format, 2))));
+        tables_.insert(std::make_pair(/*"Tables"*/"Example", 
+            new TableTree(pageManager_, read ? 2 : TableTree::ALLOC_NEW, 
+                RowIndexer(format, 2))));
     }
     
     
@@ -118,100 +120,19 @@ public:
         pageManager_.closeFile();
     }
     
-    
-    struct TokenSequence
-    {
-        TokenIterator begin, end;
-        
-        TokenSequence(TokenIterator begin, TokenIterator end): 
-            begin(begin), end(end)
-        {
-        }
-        
-        bool eof() const { return begin == end; }
-        
-        bool next() { return (++ begin == end); }
-        
-        void nextNotEnd()
-        {
-            ++ begin;   
-            notEnd();
-        }
-        
-        void notEnd(const string& error = "unexpected end of input") const
-        {
-            if (begin == end)
-                throw std::runtime_error(util::format("after '{}'\n{}", 
-                    (begin - 1)->content, error));
-        }
-        
-        void mustBe(const string& content) const 
-        {
-            notEnd();
-            if (begin->content != content)
-                throw std::runtime_error(util::format("'{} got, {} expected",
-                    begin->content, content));
-        }
-        
-        void nextMustBe(const string& content)
-        {
-            nextNotEnd();
-            mustBe(content);
-        }
-        
-        bool is(const string& content) const
-        {
-            return begin->content == content;
-        }
-        
-        void mustBe(TokenType type) const
-        {
-            notEnd();
-            if (begin->type != type)
-                throw std::runtime_error(util::format("'{}' got, {} expected",
-                    begin->content, type));
-        }
-
-        bool is(TokenType type) const
-        {
-            return begin->type == type;
-        }
-        
-        void nextMustBe(TokenType type)
-        {
-            nextNotEnd();
-            mustBe(type);
-        }
-        
-        const string& operator * () const
-        {
-            return begin->content;
-        }
-        
-        TokenSequence& operator ++ ()
-        {
-            next();
-            return *this;
-        }
-        
-        TokenType type() const
-        {
-            return begin->type;
-        }
-    };
-    
+    typedef TokenSequence<TokenIterator> Sequence;
     
     void process(const string& line)
     {        
         Tokenizer tokenizer(line, lexer.function());
         tokenizer.tokenize();
-        TokenSequence s(tokenizer.begin(), tokenizer.end());
+        Sequence s(tokenizer.begin(), tokenizer.end());
         parse(s);
     }
     
-    void parse(TokenSequence& s)
+    void parse(Sequence& s)
     {
-        if (! s.eof())
+        if (! s.isEnd())
         {
             if (*s == "show")
                 parseShow(++ s);
@@ -233,7 +154,7 @@ public:
         }
     }
     
-    void parseShow(TokenSequence& s)
+    void parseShow(Sequence& s)
     {
         s.mustBe(T_NAME);
         if (*s == "tables")
@@ -253,7 +174,7 @@ public:
         }
     }
     
-    void showRawPage(TokenSequence& s)
+    void showRawPage(Sequence& s)
     {
         s.mustBe(T_INTEGER);
         page_number n = lexical_cast<page_number>(*s);
@@ -263,7 +184,7 @@ public:
             PAGE_SIZE) << std::endl;
     }    
     
-    void showPageHeader(TokenSequence& s)
+    void showPageHeader(Sequence& s)
     {
         s.mustBe(T_INTEGER);
         page_number n = lexical_cast<page_number>(*s);
@@ -281,7 +202,7 @@ public:
         std::cout << std::endl << fmt(*page.get<DatabaseHeader>()) << std::endl;
     }
     
-    void insertNewRow(TokenSequence& s)
+    void insertNewRow(Sequence& s)
     {
         s.mustBe("into");
         s.nextMustBe(T_NAME);
@@ -334,8 +255,23 @@ public:
         return data;
     }
     
-    void selectRows(TokenSequence& s)
+    
+    template <typename Iter>
+    void printRows(Iter begin, Iter end)
     {
+        for (int i = 0; begin != end; ++ begin, ++ i)
+        {
+            std::cout << "Row " << ++ i << std::endl;
+            std::cout << *begin << std::endl;   
+        }
+    }
+    
+    
+    void selectRows(Sequence& s)
+    {
+        s.notEnd();
+        //bool all = s.is("*");
+        std::vector<string> cols = parseColumns(s);
         s.mustBe("from");
         s.nextMustBe(T_NAME);
         auto iter = tables_.find(*s);
@@ -346,15 +282,34 @@ public:
         }
         TableTree& table = *iter->second;
         std::shared_ptr<const RowFormat> format = table.indexer().rowFormat();
-        int i = 0;
-        for (const auto& row: table.all())
+        s.next();
+        std::vector<Row> rows;
+        if (! s.isEnd())
         {
-            std::cout << "Row " << ++ i << std::endl;
-            std::cout << row << std::endl;
+            types::FieldType type = (*format)[0].type;
+            std::shared_ptr<types::Data> data = readValue(*s, type);
+            table.findRange(Index(type, data), std::back_inserter(rows));
         }
+        else 
+            table.fetchAll(std::back_inserter(rows)); 
+        printRows(rows.begin(), rows.end());
     }
     
-    void createTable(TokenSequence& s)
+    std::vector<string> parseColumns(Sequence& s)
+    {
+        std::vector<string> cols;
+        s.notEnd();
+        while (*s != "from")
+        {
+            s.mustBe(T_NAME);
+            cols.push_back(*s);
+            s.nextMustBe(",");
+            s.nextNotEnd();
+        }
+        return cols;
+    }
+    
+    void createTable(Sequence& s)
     {
         s.mustBe("table");
         s.nextMustBe(T_NAME);
@@ -391,7 +346,7 @@ public:
         createTable(table, format);
     }
     
-    types::FieldType parseFieldType(TokenSequence& s)
+    types::FieldType parseFieldType(Sequence& s)
     {
         using types::ContentType;
         s.mustBe(T_NAME);

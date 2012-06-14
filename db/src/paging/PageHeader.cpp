@@ -21,6 +21,7 @@ void PageHeader::fill(page_number number, PageType type)
     rows = 0;
     free_space = DATA_SIZE;
     free_offset = 0; // od poczatku sekcji danych
+    flags = 0;
     set_page_type(flags, type);
 }
 

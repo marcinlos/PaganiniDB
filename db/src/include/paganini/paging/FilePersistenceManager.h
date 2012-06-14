@@ -119,8 +119,7 @@ void FilePersistenceManager<Locker>::read(page_number number, PageBuffer* page)
     if ((code = ::read(fd_, page->buffer, PAGE_SIZE)) < PAGE_SIZE)
     {
         throw Exception(util::format("'{}'\nwhile trying to read page nr {}", 
-            code, number), 
-            Error::READ);
+            code, number), Error::READ);
     }
 }
 
@@ -142,6 +141,8 @@ template <class Locker>
 void FilePersistenceManager<Locker>::ensurePages(page_number page)
 {
     moveToPage_(page);
+    PageBuffer buffer;
+    write(page, &buffer);
 }
 
 
