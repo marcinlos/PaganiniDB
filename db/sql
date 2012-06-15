@@ -1,0 +1,7 @@
+create table dupa(id int, name varchar)
+insert into dupa(3, "blabla")
+insert into dupa(3, "asdf")
+insert into dupa(19, "blaballll")
+select from dupa
+select from dupa 3
+

@@ -1,4 +1,4 @@
-SUBDIRS = error_msg util paging row io indexing inspect
+SUBDIRS = error_msg util paging row io indexing concurrency database inspect
 
 AM_CPPFLAGS = -I include
 
@@ -10,13 +10,17 @@ libpaganini_la_LIBADD = error_msg/liberrormsg.la \
                         row/librow.la \
                         io/libio.la \
                         indexing/libindexing.la \
+                        concurrency/libconcurrency.la \
                         inspect/libinspect.la
 
 libpaganini_la_includedir = ${includedir}/paganini
 libpaganini_la_include_HEADERS = include/paganini/paganini.h
 
 
-noinst_PROGRAMS = test insp dbshell
+noinst_PROGRAMS = test insp dbshell \
+                  threads \
+                  locks 
+                  
 test_SOURCES = test.cpp
 test_LDADD = libpaganini.la
 
@@ -31,3 +35,10 @@ dbshell_SOURCES = tools/dbshell/shell.cpp \
                   
 dbshell_LDADD = libpaganini.la
 
+
+threads_SOURCES = tests/ThreadsTest.cpp
+threads_LDADD = libpaganini.la
+threads_LDFLAGS = -pthread
+
+locks_SOURCES = tests/LockingTest.cpp
+locks_LDADD = libpaganini.la

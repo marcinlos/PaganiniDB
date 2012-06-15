@@ -19,6 +19,7 @@
 #include <paganini/indexing/IndexReader.h>
 #include <paganini/indexing/IndexWriter.h>
 #include <paganini/indexing/BTree.h>
+#include <paganini/database/DatabaseEngine.h>
 
 #include <paganini/inspect/InfoFormatter.h>
 #include <paganini/inspect/format_bytes.h>
@@ -270,7 +271,6 @@ public:
     void selectRows(Sequence& s)
     {
         s.notEnd();
-        //bool all = s.is("*");
         std::vector<string> cols = parseColumns(s);
         s.mustBe("from");
         s.nextMustBe(T_NAME);

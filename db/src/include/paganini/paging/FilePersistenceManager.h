@@ -34,6 +34,8 @@ class FilePersistenceManager
 public:
     FilePersistenceManager(const Locker& locker = Locker());
     
+    ~FilePersistenceManager();
+    
     // Tworzy nowy plik w podanej lokacji
     void create(const string& path);
 
@@ -64,6 +66,7 @@ public:
     
 private:
     void moveToPage_(page_number page);
+    void passFdToLocker_();
     
     Locker locker_;
     const static int EMPTY_FD = -1;
@@ -76,6 +79,16 @@ FilePersistenceManager<Locker>::FilePersistenceManager(const Locker& locker):
     locker_(locker)
 {
     fd_ = EMPTY_FD;
+}
+
+
+template <class Locker>
+FilePersistenceManager<Locker>::~FilePersistenceManager()
+{
+    if (fd_ != EMPTY_FD)
+    {
+        close();
+    }
 }
 
 
@@ -154,6 +167,13 @@ void FilePersistenceManager<Locker>::moveToPage_(page_number page)
         throw Exception(util::format("Trying to move to page nr {}", page),
             Error::SEEK);
     }
+}
+
+
+template <class Locker>
+void FilePersistenceManager<Locker>::passFdToLocker_()
+{
+    locker_.setFd(fd_);
 }
 
 

@@ -22,7 +22,7 @@ AC_FUNC_MALLOC
 #AC_CHECK_FUNCS([atexit])
 
 AC_DEFINE([_PAGANINI],,[To distinguish between library and user])
-AC_SUBST([AM_CXXFLAGS], ['-Wall -std=c++0x'])
+AC_SUBST([AM_CXXFLAGS], ['-Wall -Wno-unused-variable -std=c++0x'])
 
 AC_CONFIG_FILES([Makefile 
                  src/Makefile
@@ -32,6 +32,8 @@ AC_CONFIG_FILES([Makefile
                  src/row/Makefile
                  src/io/Makefile
                  src/indexing/Makefile
-                 src/inspect/Makefile])
+                 src/concurrency/Makefile
+                 src/inspect/Makefile
+                 src/database/Makefile])
                  
 AC_OUTPUT
