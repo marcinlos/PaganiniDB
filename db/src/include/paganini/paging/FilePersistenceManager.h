@@ -11,6 +11,7 @@
 */
 #ifndef __PAGANINI_PAGING_FILE_PERSISTENCE_MANAGER_H__
 #define __PAGANINI_PAGING_FILE_PERSISTENCE_MANAGER_H__
+
 #include <paganini/paging/types.h>
 #include <paganini/Error.h>
 #include <paganini/paging/PageBuffer.h>
@@ -101,6 +102,7 @@ void FilePersistenceManager<Locker>::create(const string& path)
         throw Exception(util::format("Trying to create file '{}'", path), 
             Error::FILECREATE);
     }
+    passFdToLocker_();
 }
 
 
@@ -112,16 +114,18 @@ void FilePersistenceManager<Locker>::open(const string& path)
         throw Exception(util::format("Trying to open file '{}'", path), 
             Error::FILEOPEN);
     }
+    passFdToLocker_();
 }
 
 
 template <class Locker>
 void FilePersistenceManager<Locker>::close()
 {
+    locker_.setFile(EMPTY_FD);
     ::close(fd_);
     fd_ = EMPTY_FD;
+    
 }
-
 
 
 template <class Locker>
@@ -173,7 +177,7 @@ void FilePersistenceManager<Locker>::moveToPage_(page_number page)
 template <class Locker>
 void FilePersistenceManager<Locker>::passFdToLocker_()
 {
-    locker_.setFd(fd_);
+    locker_.setFile(fd_);
 }
 
 

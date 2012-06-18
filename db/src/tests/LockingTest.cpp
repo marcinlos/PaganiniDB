@@ -1,6 +1,7 @@
 #include "config.h"
-#include <paganini/concurrency/FileLocker.h>
+#include <paganini/concurrency/FilePageLocker.h>
 #include <paganini/util/format.h>
+#include <paganini/concurrency/SystemError.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -12,12 +13,13 @@ using paganini::util::format;
 using std::cout;
 using std::endl;
 
-using paganini::concurrency::FileLocker;
+using paganini::concurrency::FilePageLocker;
 
-typedef FileLocker::ReadLock ReadLock;
-typedef FileLocker::WriteLock WriteLock;
+typedef FilePageLocker::ReadLock ReadLock;
+typedef FilePageLocker::WriteLock WriteLock;
 
-void process_input(FileLocker& locker)
+
+void process_input(FilePageLocker& locker)
 {
     string command;
     int page;
@@ -43,7 +45,7 @@ void process_input(FileLocker& locker)
 }
 
 
-void run_upgrader(FileLocker& locker)
+void run_upgrader(FilePageLocker& locker)
 {
     pid_t pid = getpid();
     int i = 0;
@@ -68,7 +70,7 @@ void run_upgrader(FileLocker& locker)
 }
 
 
-void run_reader(FileLocker& locker)
+void run_reader(FilePageLocker& locker)
 {
     pid_t pid = getpid();
     int i = 0;
@@ -83,8 +85,7 @@ void run_reader(FileLocker& locker)
 }
 
 
-
-void run_writer(FileLocker& locker)
+void run_writer(FilePageLocker& locker)
 {
     pid_t pid = getpid();
     int i = 0;
@@ -114,7 +115,7 @@ int main(int argc, char* argv[])
     }
     try
     {
-        FileLocker locker(fd);  
+        FilePageLocker locker(fd);  
         if (argc >= 3)
         {
             string mode = argv[2];
@@ -133,5 +134,10 @@ int main(int argc, char* argv[])
         std::cerr << e.what() << std::endl;
         std::cerr << "Error: " << strerror(e.errorCode()) << std::endl;
     }
+    catch (std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
     return 0;
 }
+

@@ -1,7 +1,7 @@
-create table dupa(id int, name varchar)
-insert into dupa(3, "blabla")
-insert into dupa(3, "asdf")
-insert into dupa(19, "blaballll")
-select from dupa
-select from dupa 3
+create table Students(id int, name varchar, surname varchar, avg float)
+insert into Students(3, "Aram", "Khachaturian", 3.77)
+insert into Students(3, "Sergiej", "Rachmaninov", 4.45)
+insert into Students(19, "Felix", "Mendelssohn", 3.89)
+select from Students 
+select from Students 3
 

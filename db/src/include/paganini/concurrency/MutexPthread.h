@@ -5,7 +5,6 @@
 #define __PAGANINI_CONCURRENCY_MUTEX_PTHREAD_H__
 
 #include <pthread.h>
-#include <memory>
 
 
 namespace paganini
@@ -19,9 +18,11 @@ class MutexPthread
 public:
     // Tworzy mutex z domyslnymi atrybutami
     MutexPthread();
-    
+
     // Niszczy zasoby mutexu
     ~MutexPthread();
+    
+    MutexPthread(const MutexPthread&) = delete;
     
     // Blokuje mutex
     void lock();
@@ -30,7 +31,7 @@ public:
     void unlock();
     
 private:
-    std::unique_ptr<pthread_mutex_t> mutex_;
+    pthread_mutex_t mutex_;
 };
 
 

@@ -23,6 +23,8 @@ public:
     {
         return page;
     }
+    
+    inline void setFile(int fd) { }
 };
 
 

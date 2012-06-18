@@ -179,7 +179,7 @@ void PageManager<PersistenceManager, ConcurrencyControl>::createFile(
     this->ensurePages(FIRST_ALLOC);
     
     {
-        WriteLock = lockWrite(HEADER_PAGE_NUMBER);
+        WriteLock lock = this->writeLock(HEADER_PAGE_NUMBER);
     
         // Tworzymy naglowek i pierwsza strone UV
         createHeader_();
@@ -367,7 +367,9 @@ page_number PageManager<PersistenceManager, ConcurrencyControl>::findFree_()
     // Przechodzimy po liscie stron UV, szukajac wolnej strony
     while (uv != NULL_PAGE)
     {
-        ReadLock lock = readLock(uv);
+        // Lock typu write - potrzebujemy wylacznego dostepu do strony, aby 
+        // wykonac atomiczne czytanie i potencjalna modyfikacje
+        WriteLock lock = writeLock(uv);
         readPage(uv, &page);
         int num = scanForFree_(&page);
         if (num != -1)
@@ -408,6 +410,10 @@ page_number PageManager<PersistenceManager, ConcurrencyControl>::findFree_()
 template <class PersistenceManager, class ConcurrencyControl>
 page_number PageManager<PersistenceManager, ConcurrencyControl>::allocPage()
 {
+    // Exclusive lock na naglowku - nie chcemy dwoch watkow/procesow na raz
+    // powiekszajacych pliku. Szukac to by jeszcze mogly, ale chyba nie ma
+    // sensu probowac, narzut na synchronizacje bedzie zbyt duzy.
+    WriteLock lock = writeLock(HEADER_PAGE_NUMBER);
     page_number free = findFree_();
 
     // Wypelniamy obowiazki administracyjne
@@ -422,7 +428,8 @@ page_number PageManager<PersistenceManager, ConcurrencyControl>::allocPage()
 template <class PersistenceManager, class ConcurrencyControl>
 bool PageManager<PersistenceManager, ConcurrencyControl>::deletePage(
     page_number number)
-{
+{ 
+    WriteLock lock = writeLock(number);
     return markAsFree_(number);
 }
 

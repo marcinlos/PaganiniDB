@@ -19,7 +19,8 @@ libpaganini_la_include_HEADERS = include/paganini/paganini.h
 
 noinst_PROGRAMS = test insp dbshell \
                   threads \
-                  locks 
+                  locks \
+                  reader_writer 
                   
 test_SOURCES = test.cpp
 test_LDADD = libpaganini.la
@@ -38,7 +39,9 @@ dbshell_LDADD = libpaganini.la
 
 threads_SOURCES = tests/ThreadsTest.cpp
 threads_LDADD = libpaganini.la
-threads_LDFLAGS = -pthread
+
+reader_writer_SOURCES = tests/ReaderWriterTest.cpp
+reader_writer_LDADD = libpaganini.la
 
 locks_SOURCES = tests/LockingTest.cpp
 locks_LDADD = libpaganini.la

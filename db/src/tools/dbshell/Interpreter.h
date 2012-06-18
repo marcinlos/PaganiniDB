@@ -15,6 +15,7 @@
 #include <paganini/row/RowWriter.h>
 #include <paganini/paging/FilePersistenceManager.h>
 #include <paganini/paging/DummyLocker.h>
+#include <paganini/concurrency/FilePageLocker.h>
 #include <paganini/indexing/RowIndexer.h>
 #include <paganini/indexing/IndexReader.h>
 #include <paganini/indexing/IndexWriter.h>
@@ -40,7 +41,7 @@ namespace paganini
 namespace shell
 {
 
-typedef PageManager<FilePersistenceManager<DummyLocker>> FilePageManager;
+typedef PageManager<FilePersistenceManager<concurrency::FilePageLocker>> FilePageManager;
 
 typedef DataPage<Index, types::FieldType, IndexReader, IndexWriter> 
     IndexDataPage;
@@ -88,8 +89,8 @@ public:
     Interpreter(bool read)
     {
         using types::ContentType;
-        
-        pageManager_.createFile("db");
+        if (! read)
+            pageManager_.createFile("db");
         pageManager_.openFile("db");
         lexer.registerOperators(",.+-=*^&%");
         
@@ -102,7 +103,6 @@ public:
             /*{ContentType::VarChar, "name"},
             {ContentType::PageNumber, "*/
         });
-        
         tables_.insert(std::make_pair(/*"Tables"*/"Example", 
             new TableTree(pageManager_, read ? 2 : TableTree::ALLOC_NEW, 
                 RowIndexer(format, 2))));
@@ -262,7 +262,7 @@ public:
     {
         for (int i = 0; begin != end; ++ begin, ++ i)
         {
-            std::cout << "Row " << ++ i << std::endl;
+            std::cout << "Row " << i << std::endl;
             std::cout << *begin << std::endl;   
         }
     }
