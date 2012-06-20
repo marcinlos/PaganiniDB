@@ -1,12 +1,12 @@
 #include "config.h"
-#include <paganini/concurrency/MutexPthread.h>
+#include <paganini/concurrency/pthread/Mutex.h>
 #include <pthread.h>
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <iostream>
 #include <vector>
 
-typedef paganini::concurrency::MutexPthread Mutex;
+using paganini::concurrency::pthread::Mutex;
 
 Mutex mutex;
 

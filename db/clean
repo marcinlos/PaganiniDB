@@ -13,4 +13,8 @@ rm -rf ${FILELIST}
 rm src/insp
 rm src/test
 rm src/dbshell
+rm src/locks
+rm src/reader_writer
+rm src/thread_locks
+rm src/threads
 rm db

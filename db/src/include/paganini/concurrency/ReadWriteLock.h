@@ -23,6 +23,8 @@ class ReadWriteLock
 public:
     ReadWriteLock();
     
+    ReadWriteLock(const ReadWriteLock&) = delete;
+    
     // Blokuje w trybie czytania
     void lockRead();
     

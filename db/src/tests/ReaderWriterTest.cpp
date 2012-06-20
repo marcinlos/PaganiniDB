@@ -1,6 +1,6 @@
 #include "config.h"
-#include <paganini/concurrency/MutexPthread.h>
-#include <paganini/concurrency/SemaphorePthread.h>
+#include <paganini/concurrency/pthread/Mutex.h>
+#include <paganini/concurrency/pthread/Semaphore.h>
 #include <paganini/concurrency/ReadWriteLock.h>
 #include <pthread.h>
 #include <unistd.h>
@@ -8,8 +8,8 @@
 #include <iostream>
 #include <vector>
 
-typedef paganini::concurrency::MutexPthread Mutex;
-typedef paganini::concurrency::SemaphorePthread Semaphore;
+using paganini::concurrency::pthread::Mutex;
+using paganini::concurrency::pthread::Semaphore;
 typedef paganini::concurrency::ReadWriteLock<Mutex, Semaphore> ReadWriteLock;
 
 ReadWriteLock rw_lock;

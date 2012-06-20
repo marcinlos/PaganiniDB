@@ -44,7 +44,7 @@ void FilePageLocker::lock_aux_(page_number page, short type, int cmd)
 }
 
 
-FilePageLocker::LockInfo& FilePageLocker::findLockInfo_(page_number page)
+FilePageLocker::LockInfo& FilePageLocker::find_lock_info_(page_number page)
 {
     auto i = locks_.find(page);
     if (i == locks_.end())
@@ -55,7 +55,7 @@ FilePageLocker::LockInfo& FilePageLocker::findLockInfo_(page_number page)
 
 void FilePageLocker::pageLockRead(page_number page)
 {
-    LockInfo& info = findLockInfo_(page);
+    LockInfo& info = find_lock_info_(page);
     // Jesli nie ma zadnych lockow zadnego typu, lockujemy do czytania.
     // Jesli sa locki typu write nic nie robimy, lock_read_ spowodowalby
     // oddanie locka typu write.
@@ -69,7 +69,7 @@ void FilePageLocker::pageLockRead(page_number page)
 
 void FilePageLocker::pageLockWrite(page_number page)
 {
-    LockInfo& info = findLockInfo_(page);
+    LockInfo& info = find_lock_info_(page);
     if (info.write_count == 0)
     {
         lock_write_(page);
@@ -108,7 +108,7 @@ void FilePageLocker::unlock_all_()
 
 void FilePageLocker::pageUnlockRead(page_number page)
 {
-    LockInfo& info = findLockInfo_(page);
+    LockInfo& info = find_lock_info_(page);
     if (info.read_count > 0)
     {
         -- info.read_count;
@@ -128,7 +128,7 @@ void FilePageLocker::pageUnlockRead(page_number page)
 
 void FilePageLocker::pageUnlockWrite(page_number page)
 {
-    LockInfo& info = findLockInfo_(page);
+    LockInfo& info = find_lock_info_(page);
     if (info.write_count > 0)
     {
         -- info.write_count; 

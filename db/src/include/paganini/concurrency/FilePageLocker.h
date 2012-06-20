@@ -61,7 +61,7 @@ private:
     typedef LockMap::iterator LockMapIterator;
     LockMap locks_;
     
-    LockInfo& findLockInfo_(page_number page);
+    LockInfo& find_lock_info_(page_number page);
 };
 
 

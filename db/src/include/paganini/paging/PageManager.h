@@ -239,22 +239,20 @@ page_number PageManager<PersistenceManager,
 }
 
 
-// Zwraca ilosc stron
+// Zwraca ilosc stron. Powinna byc wywolywana wylacznie gdy mamy locka
+// na naglowek bazy
 template <class PersistenceManager, class ConcurrencyControl>
 size32 PageManager<PersistenceManager, ConcurrencyControl>::pageCount_()
 {
     PageBuffer page;
-    {
-        ReadLock lock = readLock(HEADER_PAGE_NUMBER);
-        readPage(HEADER_PAGE_NUMBER, &page);
-    }
+    readPage(HEADER_PAGE_NUMBER, &page);
     DatabaseHeader* db_header = page.get<DatabaseHeader>();
     return db_header->page_count;
 }
 
 
 // Zapisuje w strukturach wewnetrznych (strona UV) informacje, ze podana strona
-// jest uzywana.
+// jest uzywana. Powinna miec writelocka na strone modyfikowana.
 template <class PersistenceManager, class ConcurrencyControl>
 bool PageManager<PersistenceManager, ConcurrencyControl>::markAsUsed_(
     page_number number)

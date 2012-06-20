@@ -1,5 +1,10 @@
 #include "config.h"
-#include <paganini/concurrency/FilePageLocker.h>
+#include <paganini/concurrency/ThreadPageLocker.h>
+#include <paganini/concurrency/pthread/Thread.h>
+#include <paganini/concurrency/pthread/Mutex.h>
+#include <paganini/concurrency/pthread/Semaphore.h>
+#include <paganini/concurrency/ReadWriteLock.h>
+#include <paganini/concurrency/ScopeLock.h>
 #include <paganini/util/format.h>
 #include <paganini/concurrency/SystemError.h>
 #include <unistd.h>
@@ -12,8 +17,13 @@ using std::string;
 using paganini::util::format;
 using std::cout;
 using std::endl;
+using paganini::concurrency::pthread::Mutex;
+using paganini::concurrency::pthread::Semaphore;
+using paganini::concurrency::pthread::Thread;
+using paganini::concurrency::ReadWriteLock;
+using paganini::concurrency::make_lock;
 
-typedef paganini::concurrency::FilePageLocker PageLocker;
+typedef paganini::concurrency::ThreadPageLocker<Thread, Mutex, ReadWriteLock<Mutex, Semaphore>> PageLocker;
 
 typedef PageLocker::ReadLock ReadLock;
 typedef PageLocker::WriteLock WriteLock;
@@ -44,29 +54,13 @@ void process_input(PageLocker& locker)
     }
 }
 
-
-void run_upgrader(PageLocker& locker)
+Mutex state;
+int r;
+bool w;
+inline void check()
 {
-    pid_t pid = getpid();
-    int i = 0;
-    while (true)
-    {
-        ++ i;
-        {
-            ReadLock rl = locker.readLock(0);
-            cout << format("[{}] ({}) Reading...", pid, i) << endl;
-            //sleep(3);
-            {
-                WriteLock wl = locker.writeLock(0);
-                cout << format("[{}] ({}) Writing...", pid, i) << endl; 
-                //sleep(5);
-                cout << format("[{}] ({}) Done writing", pid, i) << endl;  
-            }
-            //sleep(2);
-            cout <<  format("[{}] ({}) Done reading", pid, i) << endl;
-        }
-        //sleep(1);
-    }
+    if (r > 0 && w)
+        std::cerr << "Damn :(" << std::endl;
 }
 
 
@@ -78,9 +72,12 @@ void run_reader(PageLocker& locker)
     {
         ++ i;
         ReadLock rl = locker.readLock(0);
+        auto slock = make_lock(state);
+        ++ r;
+        check();
+        usleep(10000);
+        -- r;
         cout << format("[{}] ({}) Reading...", pid, i) << endl;
-        //sleep(2);
-        std::cout << format("[{}] ({}) Done reading", pid, i)  << endl;
     }
 }
 
@@ -93,41 +90,39 @@ void run_writer(PageLocker& locker)
     {
         ++ i;
         WriteLock wl = locker.writeLock(0);
+        auto slock = make_lock(state);
+        w = true;
+        check();
+        usleep(10000);
+        w = false;
         cout << format("[{}] ({}) Writing...", pid, i) << endl; 
-        //sleep(5);
-        cout << format("[{}] ({}) Done writing", pid, i) << endl;
     }
 }
 
 
 int main(int argc, char* argv[])
 {
-    if (argc < 2)
-    {
-        std::cerr << "Usage: locks <filename> [mode]" << std::endl;
-        exit(1);
-    }
-    int fd = open(argv[1], O_RDWR);
-    if (fd < 0)
-    {
-        std::cerr << "Error while opening file" << std::endl;
-        std::cerr << strerror(errno) << std::endl;
-    }
+    static const int READERS = 9, WRITERS = 3;
     try
     {
-        PageLocker locker(fd);  
-        if (argc >= 3)
+        std::cerr << Thread::self() << endl;
+        PageLocker locker;  
+        std::function<void ()> f(std::bind<void>(run_reader, std::ref(locker)));
+        //f();
+        std::vector<Thread> threads;
+        for (int i = 0; i < READERS; ++ i)
         {
-            string mode = argv[2];
-            if (mode == "reader")
-                run_reader(locker);
-            else if (mode == "writer")
-                run_writer(locker);
-            else if (mode == "upg")
-                run_upgrader(locker);
+            threads.emplace_back(run_reader, std::ref(locker));
         }
-        else
-            process_input(locker);
+        for (int i = 0; i < WRITERS; ++ i)
+        {
+            threads.emplace_back(run_writer, std::ref(locker));
+        }
+        for (Thread& thread: threads)
+            thread();
+        sleep(1);
+        for (Thread& thread: threads)
+            thread.join();
     }
     catch (paganini::concurrency::SystemError& e)
     {

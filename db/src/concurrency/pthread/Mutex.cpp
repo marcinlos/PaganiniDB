@@ -1,5 +1,5 @@
 #include "config.h"
-#include <paganini/concurrency/MutexPthread.h>
+#include <paganini/concurrency/pthread/Mutex.h>
 #include <paganini/concurrency/SystemError.h>
 
 
@@ -7,9 +7,11 @@ namespace paganini
 {
 namespace concurrency
 {
+namespace pthread
+{
 
 
-MutexPthread::MutexPthread()
+Mutex::Mutex()
 {
     int code;
     if ((code = pthread_mutex_init(&mutex_, nullptr)) < 0)
@@ -17,13 +19,13 @@ MutexPthread::MutexPthread()
 }
 
 
-MutexPthread::~MutexPthread()
+Mutex::~Mutex()
 {
     pthread_mutex_destroy(&mutex_);
 }
 
 
-void MutexPthread::lock()
+void Mutex::lock()
 {
     int code;
     if ((code = pthread_mutex_lock(&mutex_)) < 0)
@@ -31,13 +33,14 @@ void MutexPthread::lock()
 }
 
 
-void MutexPthread::unlock()
+void Mutex::unlock()
 {
     int code;
     if ((code = pthread_mutex_unlock(&mutex_)) < 0)
         throw SystemError("Cannot unlock the mutex", code);
 }
 
-
+} // pthread
 } // paganini
 } // concurrency
+

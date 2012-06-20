@@ -1,8 +1,8 @@
 /*
     Klasa opakowujaca zwykly mutex pthreadowy.
 */
-#ifndef __PAGANINI_CONCURRENCY_MUTEX_PTHREAD_H__
-#define __PAGANINI_CONCURRENCY_MUTEX_PTHREAD_H__
+#ifndef __PAGANINI_CONCURRENCY_PTHREAD_MUTEX_H__
+#define __PAGANINI_CONCURRENCY_PTHREAD_MUTEX_H__
 
 #include <pthread.h>
 
@@ -11,18 +11,20 @@ namespace paganini
 {
 namespace concurrency
 {
+namespace pthread
+{
 
 
-class MutexPthread
+class Mutex
 {
 public:
     // Tworzy mutex z domyslnymi atrybutami
-    MutexPthread();
+    Mutex();
 
     // Niszczy zasoby mutexu
-    ~MutexPthread();
+    ~Mutex();
     
-    MutexPthread(const MutexPthread&) = delete;
+    Mutex(const Mutex&) = delete;
     
     // Blokuje mutex
     void lock();
@@ -35,9 +37,10 @@ private:
 };
 
 
+} // pthread
 } // concurrency
 } // paganini
 
 
+#endif // __PAGANINI_CONCURRENCY_PTHREAD_MUTEX_H__
 
-#endif // __PAGANINI_CONCURRENCY_MUTEX_PTHREAD_H__

@@ -6,6 +6,7 @@
 #define __PAGANINI_CONCURRENCY_PAGE_LOCK_H__
 
 #include <paganini/paging/types.h>
+#include <iostream>
 
 
 namespace paganini

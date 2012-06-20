@@ -1,8 +1,8 @@
 /*
     Klasa opakowujaca semafor pthreadowy.
 */
-#ifndef __PAGANINI_CONCURRENCY_SEMAPHORE_PTHREAD_H__
-#define __PAGANINI_CONCURRENCY_SEMAPHORE_PTHREAD_H__
+#ifndef __PAGANINI_CONCURRENCY_PTHREAD_SEMAPHORE_H__
+#define __PAGANINI_CONCURRENCY_PTHREAD_SEMAPHORE_H__
 
 #include <semaphore.h>
 #include <memory>
@@ -12,16 +12,18 @@ namespace paganini
 {
 namespace concurrency
 {
+namespace pthread
+{
 
 
-class SemaphorePthread
+class Semaphore
 {
 public:
-    SemaphorePthread(int init);
+    Semaphore(int init);
     
-    SemaphorePthread(const SemaphorePthread&) = delete;
+    Semaphore(const Semaphore&) = delete;
     
-    ~SemaphorePthread();
+    ~Semaphore();
     
     // Opuszcza semafor
     void lock();
@@ -34,9 +36,10 @@ private:
 };
 
 
+} // pthread
 } // concurrency
 } // paganini
 
 
+#endif // __PAGANINI_CONCURRENCY_PTHREAD_SEMAPHORE_H__
 
-#endif // __PAGANINI_CONCURRENCY_SEMAPHORE_PTHREAD_H__
