@@ -9,6 +9,8 @@
 
 #include <paganini/concurrency/ScopeLock.h>
 
+#include <iostream>
+
 
 namespace paganini
 {
@@ -72,7 +74,7 @@ void ReadWriteLock<_Mutex, _Semaphore>::lockRead()
 
 template <class _Mutex, class _Semaphore>
 void ReadWriteLock<_Mutex, _Semaphore>::unlockRead()
-{
+{   
     int count = 0;
     {
         auto mutex_lock = make_lock(mutex_);
@@ -103,7 +105,8 @@ void ReadWriteLock<_Mutex, _Semaphore>::unlockWrite()
 template <class _Mutex, class _Semaphore>
 bool ReadWriteLock<_Mutex, _Semaphore>::empty()
 {
-    auto no_writers_lock = make_lock(no_writers_);
+    // TODO: Jak sie spieprzy, to moze dlatego
+    // auto no_writers_lock = make_lock(no_writers_);
     return (! writer_ && reader_count_ == 0);
 }
 

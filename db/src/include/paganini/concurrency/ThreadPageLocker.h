@@ -26,8 +26,8 @@ namespace concurrency
 
 template <
     class _Thread, 
-    class _Mutex = typename _Thread::Mutex,
-    class _ReadWriteLock = typename _Thread::ReadWriteLock
+    class _Mutex = typename _Thread::DefaultMutex,
+    class _ReadWriteLock = typename _Thread::DefaultReadWriteLock
 >
 class ThreadPageLocker: 
     public GenericPageLocker<
@@ -37,6 +37,10 @@ class ThreadPageLocker:
 public:
     ThreadPageLocker() {}
     ThreadPageLocker(const ThreadPageLocker&) = delete;
+    ThreadPageLocker(ThreadPageLocker&& other);
+    
+    // Pusty - aby moc uzywac z FilePersistenceManagerem
+    void setFile(int descriptor);
 
     // Lockuje w trybie odczytu strone o podanym numerze 
     void pageLockRead(page_number page);
@@ -66,10 +70,8 @@ private:
     
     struct PageState
     {
-        // wartosc > 0: ilosc czytelnikow
-        // wartos 0: pusta
-        // wartosc -1: pisarz
-        short accessors;    
+        // Ilosc watkow czekajacych na locka, badz go posiadajacych
+        short users;    
             
         // Indeks do puli lockow. -1 gdy nie jest przydzielony
         int lock_index;
@@ -86,6 +88,20 @@ private:
     
     LockInfo& find_lock_info_(PageState& state);
 };
+
+
+template <class _Thread, class _Mutex, class _ReadWriteLock>
+ThreadPageLocker<_Thread, _Mutex, _ReadWriteLock>::ThreadPageLocker(
+    ThreadPageLocker&& other): lock_pool_(std::move(other.lock_pool_)),
+        pages_(std::move(other.pages_))
+{
+}
+
+
+template <class _Thread, class _Mutex, class _ReadWriteLock>
+void ThreadPageLocker<_Thread, _Mutex, _ReadWriteLock>::setFile(int descriptor)
+{
+}
 
 
 template <class _Thread, class _Mutex, class _ReadWriteLock>
@@ -155,7 +171,7 @@ void ThreadPageLocker<_Thread, _Mutex, _ReadWriteLock>::pageLockRead(
         ++ info.read_count;
         do_lock = info.read_count == 1 && info.write_count == 0;
         if (do_lock)
-            ++ state.accessors;
+            ++ state.users;
     }
     
     // Jesli to pierwszy lock, to istotnie lockujemy
@@ -168,7 +184,6 @@ template <class _Thread, class _Mutex, class _ReadWriteLock>
 void ThreadPageLocker<_Thread, _Mutex, _ReadWriteLock>::pageUnlockRead(
     page_number page)
 {
-    
     auto mutex_lock = make_lock(mutex_);
     PageState& state = find_page_state_(page);
     LockInfo& info = find_lock_info_(state);
@@ -179,9 +194,11 @@ void ThreadPageLocker<_Thread, _Mutex, _ReadWriteLock>::pageUnlockRead(
         if (info.read_count == 0 && info.write_count == 0)
         {
             lock_pool_[state.lock_index]->unlockRead();
-            -- state.accessors;
-            // Odbieramy locka, to pewnie bedzie nieefektywne
-            // state.lock_index = -1;
+            if (-- state.users == 0)
+            {
+                // Odbieramy locka, to pewnie bedzie nieefektywne
+                state.lock_index = -1;
+            }
         }
     }
     else
@@ -205,11 +222,13 @@ void ThreadPageLocker<_Thread, _Mutex, _ReadWriteLock>::pageLockWrite(
         lock_index = state.lock_index;
         LockInfo& info = find_lock_info_(state);
         ++ info.write_count;
-        
         if (info.write_count == 1)
         {
             if (info.read_count == 0)
+            {
                 do_lock = true;
+                ++ state.users;
+            }
             else // proba upgrade'owania
             {
                 throw std::logic_error(util::format("Trying to upgrade lock on "
@@ -217,7 +236,6 @@ void ThreadPageLocker<_Thread, _Mutex, _ReadWriteLock>::pageLockWrite(
             }
         }
     }
-    
     // Jesli to pierwszy lock typu write, to istotnie lockujemy
     if (do_lock)
     {
@@ -233,16 +251,19 @@ void ThreadPageLocker<_Thread, _Mutex, _ReadWriteLock>::pageUnlockWrite(
     auto mutex_lock = make_lock(mutex_);
     PageState& state = find_page_state_(page);
     LockInfo& info = find_lock_info_(state);
+    
     if (info.write_count > 0)
     {
-        -- info.write_count;
-        if (info.write_count == 0)
+        if (-- info.write_count == 0)
         {
             if (info.read_count == 0)
             {
                 lock_pool_[state.lock_index]->unlockWrite();
-                // Odbieramy locka, to pewnie bedzie nieefektywne
-                // state.lock_index = -1;
+                if (-- state.users == 0)
+                {
+                    // Odbieramy locka, to pewnie bedzie nieefektywne
+                    state.lock_index = -1;
+                }
             }
             else
             {

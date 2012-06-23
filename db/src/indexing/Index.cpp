@@ -12,4 +12,19 @@ Index::Index(const types::FieldType& type, ConstDataPtr value,
 }
 
 
+Index::Index(const Index& other): type_(other.type_), value_(other.value_),
+    child_(other.child_)
+{
+}
+
+
+Index& Index::operator = (const Index& other)
+{
+    type_ = other.type_;
+    value_ = other.value_;
+    child_ = other.child_;
+    return *this;
+}
+
+
 }

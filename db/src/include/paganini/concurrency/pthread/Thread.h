@@ -4,6 +4,9 @@
 #ifndef __PAGANINI_CONCURRENCY_PTHREAD_THREAD_H__
 #define __PAGANINI_CONCURRENCY_PTHREAD_THREAD_H__
 
+#include <paganini/concurrency/pthread/Mutex.h>
+#include <paganini/concurrency/pthread/Semaphore.h>
+#include <paganini/concurrency/ReadWriteLock.h>
 #include <pthread.h>
 #include <functional>
 
@@ -20,6 +23,8 @@ class Thread
 {
 public:
     typedef pid_t Id;
+    typedef Mutex DefaultMutex;
+    typedef ReadWriteLock<Mutex, Semaphore> DefaultReadWriteLock;
     typedef std::function<void ()> Function;
     static Id self();
     

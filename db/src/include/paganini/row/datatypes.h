@@ -43,6 +43,7 @@ enum class ContentType
     Float,
     PageNumber,
     Char,
+    FieldType,
     // Odtad typy zmiennej wielkosci
     VarChar = VARIABLE_MASK
 };
@@ -59,6 +60,7 @@ inline std::ostream& operator << (std::ostream& os, types::ContentType content)
     case ContentType::Float: str = "float"; break;
     case ContentType::PageNumber: str = "page_number"; break;
     case ContentType::Char: str = "char"; break;
+    case ContentType::FieldType: str = "field_type"; break;
     case ContentType::VarChar: str = "varchar"; break;
     default: str = "INVALID";
     }
@@ -73,8 +75,8 @@ struct FieldType
     ContentType content;
     size16 size;
     
-    FieldType(ContentType content, size16 size = NON_APPLICABLE): 
-        content(content), size(size)
+    FieldType(ContentType content = ContentType::None, 
+        size16 size = NON_APPLICABLE): content(content), size(size)
     {
     }
 };
@@ -202,6 +204,49 @@ typedef GenericWrapper<int32_t, ContentType::Int> Int;
 typedef GenericWrapper<float, ContentType::Float> Float;
 typedef GenericWrapper<page_number, ContentType::PageNumber> PageNumber;
 
+// Reprezentacja typu pola
+class FieldTypeData: public Data
+{
+private:
+    FieldType type_;
+    
+public:
+    explicit FieldTypeData(FieldType type = FieldType()): type_(type)
+    {
+    }
+    
+    void writeTo(OutputBinaryStream& stream) const
+    {
+        stream.write(static_cast<size16>(type_.content));
+        stream.write(type_.size);
+    }
+    
+    void readFrom(InputBinaryStream& stream, size16 size = 0)
+    {
+        size16 content;
+        stream.read(&content);
+        type_.content = static_cast<ContentType>(content);
+        stream.read(&type_.size);
+    }
+    
+    // TODO: Dorobic, ale nie jest potrzebne
+    bool readFrom(const string& str)
+    {
+        return false;
+    }
+    
+    size16 size() const { return sizeof(type_); }
+    
+    FieldType type() const 
+    { 
+        return  { ContentType::FieldType, FieldType::NON_APPLICABLE }; 
+    }
+    
+    FieldType value() const { return type_; }
+    
+    string toString() const { return util::format("{}", value());  }
+};
+
 
 // Stringami musimy zajac sie inaczej.
 // Typ tekstowy okreslonej z gory dlugosci.
@@ -215,6 +260,13 @@ public:
     explicit Char(size16 length, const string& value = ""): 
         val(length), max_length(length)
     {
+        std::copy(value.begin(), value.end(), val.begin());
+    }
+    
+    explicit Char(const std::pair<string, size16>& pair): val(pair.second),
+        max_length(pair.second)
+    {
+        const string& value = pair.first;
         std::copy(value.begin(), value.end(), val.begin());
     }
     

@@ -59,8 +59,32 @@ public:
     // root == ALLOC_NEW, strona jest pobierana poprzez metode allocPage
     // systemu stronnicowania.
     explicit BTree(_PagingSystem& pager, page_number root = ALLOC_NEW,
-        const _Indexer& indexer = _Indexer());
-       
+        const _Indexer& indexer = _Indexer()):
+        pager_(pager), root_(root), indexer_(indexer)
+    {
+        if (root_ == ALLOC_NEW)
+            root_ = pager_.allocPage();
+        
+        end_ = root_;
+        _DataPage root_page;
+        auto writeLock = pager_.writeLock(root_);
+        pager_.readPage(root_, root_page.buffer());
+        root_page.setNumber(root_);
+        pager_.writePage(root_, root_page.buffer());
+    }
+    
+    
+    // Noncopyable
+    BTree(const BTree&) = delete;
+    
+    
+    // Move-constructor
+    BTree(BTree&& other): pager_(other.pager_), root_(other.root),
+        end_(other.end_), indexer_(std::move(other.indexer_))
+    {
+        other.root_ = NULL_PAGE;
+    }
+    
        
     // Zwraca numer strony korzenia
     page_number root() const
@@ -70,7 +94,56 @@ public:
     
     
     // Dodaje wiersz do drzewa
-    bool insert(const RowType& row);
+    bool insert(const RowType& row)
+    {
+        auto writeLock = pager_.writeLock(end_);
+        _DataPage page;
+        pager_.readPage(end_, page.buffer());
+        if (! page.canFit(row))
+        {
+            page_number prev = end_;
+            end_ = pager_.allocPage();
+            page.setNext(end_);
+            pager_.writePage(prev, page.buffer());
+            
+            pager_.readPage(end_, page.buffer());
+            page.setPrev(prev);
+        }
+        insertDataNonfull_(row, page);
+        // Dla uproszczenia korzystamy z rekursywnosci
+        auto secondLock = pager_.writeLock(end_);
+        pager_.writePage(end_, page.buffer());
+        return true;
+    }
+    
+    
+    // Wyszukuje wiersz pasujacy do podanego predykatu. Szczegoly nizej w
+    // findAll.
+    template <typename _Predicate>
+    Row find(_Predicate matches) const
+    {
+        _DataPage page;
+        page_number page_num = root_;
+        while (true)
+        {
+            auto readLock = pager_.readLock(page_num);
+            pager_.readPage(page_num, page.buffer());
+            
+            for (size16 i = 0; i < page.rowCount(); ++ i)
+            {
+                RowType row = page.row(i, indexer_.rowFormat());
+                
+                if (matches(row))
+                    return row; 
+            }
+            if (page_num == end_)
+                break;
+            else
+                page_num = page.next();
+        }
+        return Row();
+    }
+    
     
     // Wyszukuje wiersz
     RowType find(const IndexType& key) const
@@ -86,6 +159,51 @@ public:
             return RowType();
     }
     
+    
+    // Wyszukuje wszystkie wiersze pasujace do podanego predykatu. Obiekt 
+    // predykatu powinien posiadac operator () przyjmujacy typ Row i
+    // zwracajacy wartosc konwertowalna na bool. 
+    template <typename _Predicate, typename _OutIter>
+    void findAll(_Predicate matches, _OutIter out) const
+    {
+         _DataPage page;
+        page_number page_num = root_;
+        while (true)
+        {
+            auto readLock = pager_.readLock(page_num);
+            pager_.readPage(page_num, page.buffer());
+            
+            for (size16 i = 0; i < page.rowCount(); ++ i)
+            {
+                RowType row = page.row(i, indexer_.rowFormat());
+                
+                if (matches(row))
+                    *out ++ = row; 
+            }
+            if (page_num == end_)
+                break;
+            else
+                page_num = page.next();
+        }
+    }
+    
+    
+    // Wyszukuje wszystkie pasujace wiersze brutalnie przegladajac cala tabele
+    template <typename _OutIter>
+    void findAll(const IndexType& key, _OutIter out) const
+    {
+        // Forwardujemy do funkcji ogolnej przyjmujacej predykat
+        findAll([this, key](const Row& row)
+        {
+            IndexType index = indexer_(row);
+            return indexer_(key, index) == 0;
+        }, 
+        out);
+    }
+    
+    
+    // Wyszukuje wszystkie pasujace wiersze od first do pierwszego 
+    // niepasujacego
     template <typename _OutIter>
     void readRange(RowIterator first, const IndexType& key, _OutIter out) const
     {
@@ -115,13 +233,16 @@ public:
             }
         }
     }
+    
      
+    // Znajduje pierwszy pasujacy wiersz, zwraca jego pozycjje
     RowIterator findFirst(const IndexType& key) const
     {
          _DataPage page;
         page_number page_num = root_;
         while (true)
         {
+            auto readLock = pager_.readLock(page_num);
             pager_.readPage(page_num, page.buffer());
             
             for (size16 i = 0; i < page.rowCount(); ++ i)
@@ -140,6 +261,8 @@ public:
         return { NULL_PAGE, 0 };
     }
     
+    
+    // Zwraca wszystkie wiersze (zapisuje przy uzyciu iteratora out)
     template <typename _OutIter>
     void fetchAll(_OutIter out) const
     {
@@ -160,6 +283,9 @@ public:
         }
     }
     
+    
+    // Wyszukuje pasujace wiersze od pierwszego pasujacego do pierwszego
+    // niepasujacego po nim
     template <typename _OutIter>
     void findRange(const IndexType& key, _OutIter out) const
     {
@@ -168,11 +294,53 @@ public:
             readRange(i, key, out);
     }
     
+    
+    // Zwraca wiersz o najwiekszym indeksie
+    RowType max()
+    {
+        // Nie chcemy by ktokolwiek zmienial zawartosc 
+        auto writeLock = pager_.writeLock(root_);
+        _DataPage page;
+        page_number page_num = root_;
+        RowType current_max;
+        IndexType index_max;
+        bool empty = true;
+        while (true)
+        {
+            pager_.readPage(page_num, page.buffer());
+            
+            for (size16 i = 0; i < page.rowCount(); ++ i)
+            {
+                RowType row = page.row(i, indexer_.rowFormat());
+                IndexType index = indexer_(row);
+                if (empty)
+                {
+                    current_max = row;
+                    index_max = index;
+                    empty = false;
+                }
+                else if (indexer_(index_max, index) < 0)
+                {
+                    current_max = row;
+                    index_max = index;
+                }
+            }
+            if (page_num == end_)
+                break;
+            else
+                page_num = page.next();
+        }
+        return current_max;
+    }
+    
     const _Indexer& indexer() const { return indexer_; }
 
 private:
 
-    void insertDataNonfull_(const RowType& row, _DataPage& page);
+    void insertDataNonfull_(const RowType& row, _DataPage& page)
+    {
+        page.insert(row, 0);
+    }
 
     _PagingSystem& pager_;
     page_number root_, end_;
@@ -180,55 +348,8 @@ private:
 };
 
 
-template <class _PagingSystem, class _Indexer, class _IndexPage, class _DataPage>
-BTree<_PagingSystem, _Indexer, _IndexPage, _DataPage>::BTree(
-    _PagingSystem& pager, page_number root, const _Indexer& indexer):
-    pager_(pager), root_(root), indexer_(indexer)
-{
-    if (root_ == ALLOC_NEW)
-        root_ = pager_.allocPage();
-    
-    end_ = root_;
-    _DataPage root_page;
-    pager_.readPage(root_, root_page.buffer());
-    root_page.setNumber(root_);
-    pager_.writePage(root_, root_page.buffer());
-}
-
-
-template <class _PagingSystem, class _Indexer, class _IndexPage, class _DataPage>
-bool BTree<_PagingSystem, _Indexer, _IndexPage, 
-    _DataPage>::insert(const RowType& row)
-{
-    _DataPage page;
-    pager_.readPage(end_, page.buffer());
-    if (! page.canFit(row))
-    {
-        page_number prev = end_;
-        end_ = pager_.allocPage();
-        page.setNext(end_);
-        pager_.writePage(prev, page.buffer());
-        
-        pager_.readPage(end_, page.buffer());
-        page.setPrev(prev);
-    }
-    insertDataNonfull_(row, page);
-    pager_.writePage(end_, page.buffer());
-    return true;
-}
-
-
-template <class _PagingSystem, class _Indexer, class _IndexPage, class _DataPage>
-void BTree<_PagingSystem, _Indexer, _IndexPage, 
-    _DataPage>::insertDataNonfull_(const RowType& row, _DataPage& page)
-{
-    page.insert(row, 0);
-}
-
-
-
-
 }
 
 
 #endif // __PAGANINI_INDEXING_BTREE_H__
+

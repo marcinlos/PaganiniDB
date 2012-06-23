@@ -16,12 +16,15 @@
 using std::string;
 using paganini::util::format;
 using std::cout;
+using std::cerr;
 using std::endl;
 using paganini::concurrency::pthread::Mutex;
 using paganini::concurrency::pthread::Semaphore;
 using paganini::concurrency::pthread::Thread;
 using paganini::concurrency::ReadWriteLock;
 using paganini::concurrency::make_lock;
+
+using paganini::page_number;
 
 typedef paganini::concurrency::ThreadPageLocker<Thread, Mutex, ReadWriteLock<Mutex, Semaphore>> PageLocker;
 
@@ -63,46 +66,51 @@ inline void check()
         std::cerr << "Damn :(" << std::endl;
 }
 
+static const int PAGES = 3;
 
 void run_reader(PageLocker& locker)
 {
-    pid_t pid = getpid();
+    Thread::Id pid = Thread::self();
     int i = 0;
     while (true)
     {
         ++ i;
-        ReadLock rl = locker.readLock(0);
+        page_number page = rand() % PAGES;
+        cerr << format("[{}] ({}) Want to read {}...", pid, i, page) << endl;
+        ReadLock rl = locker.readLock(page);
         auto slock = make_lock(state);
         ++ r;
         check();
-        usleep(10000);
+        //usleep(10000);
         -- r;
-        cout << format("[{}] ({}) Reading...", pid, i) << endl;
+        cerr << format("[{}] ({}) Reading from {}...", pid, i, page) << endl;
     }
 }
 
 
 void run_writer(PageLocker& locker)
 {
-    pid_t pid = getpid();
+    Thread::Id pid = Thread::self();
     int i = 0;
     while (true)
     {
         ++ i;
-        WriteLock wl = locker.writeLock(0);
+        page_number page = rand() % PAGES;
+        cerr << format("[{}] ({}) Want to write {}...", pid, i, page) << endl;
+        WriteLock wl = locker.writeLock(page);
         auto slock = make_lock(state);
         w = true;
         check();
-        usleep(10000);
+        //usleep(10000);
         w = false;
-        cout << format("[{}] ({}) Writing...", pid, i) << endl; 
+        cerr << format("[{}] ({}) Writing to {}...", pid, i, page) << endl; 
     }
 }
 
 
 int main(int argc, char* argv[])
 {
-    static const int READERS = 9, WRITERS = 3;
+    static const int READERS = 50, WRITERS = 10;
     try
     {
         std::cerr << Thread::self() << endl;
@@ -110,10 +118,10 @@ int main(int argc, char* argv[])
         std::function<void ()> f(std::bind<void>(run_reader, std::ref(locker)));
         //f();
         std::vector<Thread> threads;
-        for (int i = 0; i < READERS; ++ i)
+        /*for (int i = 0; i < READERS; ++ i)
         {
             threads.emplace_back(run_reader, std::ref(locker));
-        }
+        }*/
         for (int i = 0; i < WRITERS; ++ i)
         {
             threads.emplace_back(run_writer, std::ref(locker));

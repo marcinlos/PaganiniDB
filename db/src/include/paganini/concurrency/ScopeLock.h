@@ -22,11 +22,15 @@ public:
     // Przenosi locka bez lockowania/unlockowania
     ScopeLock(ScopeLock&& other);
     
+    // Odblokowuje locka
+    void unlock();
+    
     // Zwalnia locka
     ~ScopeLock();
     
 private:
-    _Lockable* lockable_;
+    _Lockable& lockable_;
+    bool locked_;
 };
 
 
@@ -38,9 +42,10 @@ ScopeLock<_Lockable> make_lock(_Lockable& lockable)
 
 
 template <class _Lockable>
-ScopeLock<_Lockable>::ScopeLock(_Lockable& lockable): lockable_(&lockable)
+ScopeLock<_Lockable>::ScopeLock(_Lockable& lockable): lockable_(lockable)
 {
-    lockable_->lock();
+    lockable_.lock();
+    locked_ = true;
 }
 
 
@@ -48,15 +53,25 @@ template <class _Lockable>
 ScopeLock<_Lockable>::ScopeLock(ScopeLock&& other): 
     lockable_(other.lockable_)
 {
-    other.lockable_ = nullptr;
+    other.locked_ = false;
+}
+
+
+template <class _Lockable>
+void ScopeLock<_Lockable>::unlock()
+{
+    if (locked_)
+    {
+        lockable_.unlock();
+        locked_ = false;
+    }
 }
 
 
 template <class _Lockable>
 ScopeLock<_Lockable>::~ScopeLock()
 {
-    if (lockable_ != nullptr)
-        lockable_->unlock();
+    unlock();
 }
 
 

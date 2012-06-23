@@ -15,10 +15,17 @@ FilePageLocker::FilePageLocker(int descriptor): descriptor_(descriptor)
 {
 }
 
+FilePageLocker::FilePageLocker(FilePageLocker&& other): 
+    descriptor_(other.descriptor_)
+{
+    other.descriptor_ = NONE;
+}
+
 
 FilePageLocker::~FilePageLocker()
 {
-    unlock_all_();
+    if (descriptor_ != NONE)
+        unlock_all_();
 }
 
 

@@ -17,4 +17,8 @@ rm src/locks
 rm src/reader_writer
 rm src/thread_locks
 rm src/threads
+rm src/net_cl
+rm src/net_sv
+rm src/dbsv
+rm src/dbcl
 rm db

@@ -26,6 +26,9 @@ public:
     // to wartosc nieprawidlowa.
     FilePageLocker(int descriptor = NONE);
     
+    // Move-constructible
+    FilePageLocker(FilePageLocker&& other);
+    
     // Zwalnia wszystkie locki
     ~FilePageLocker();
     

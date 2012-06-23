@@ -39,6 +39,13 @@ FieldFactory::FieldFactory()
         [](size16 size) { return size; }
     };
     
+    types[ContentType::FieldType] =
+    {
+        [](size16 size) { return new 
+            types::TypeMapping<ContentType::FieldType>::type; },
+        [](size16) { return sizeof(FieldType); }
+    };
+    
     types[ContentType::VarChar] =
     {
         [](size16) { return new types::TypeMapping<ContentType::VarChar>::type; },

@@ -33,6 +33,7 @@ AC_CONFIG_FILES([Makefile
                  src/io/Makefile
                  src/indexing/Makefile
                  src/concurrency/Makefile
+                 src/networking/Makefile
                  src/inspect/Makefile
                  src/database/Makefile])
                  

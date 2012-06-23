@@ -1,7 +1,8 @@
 create table Students(id int, name varchar, surname varchar, avg float)
-insert into Students(3, "Aram", "Khachaturian", 3.77)
-insert into Students(3, "Sergiej", "Rachmaninov", 4.45)
-insert into Students(19, "Felix", "Mendelssohn", 3.89)
-select from Students 
+insert into Students values (3, "Aram", "Khachaturian", 3.77)
+insert into Students values (3, "Sergiej", "Rachmaninov", 4.45)
+insert into Students values (19, "Felix", "Mendelssohn", 3.89)
+insert into Students values (3, "Franz", "Liszt", 4.45)
+print "Teraz select"
 select from Students 3
 

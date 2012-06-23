@@ -49,11 +49,8 @@ inline bool isUV(page_number page)
 // jest zapewnienie fizycznego dostepu do odczytu/zapisu danych, jak rowniez
 // lockowania. Wydaje mi sie, ze jest na tyle polaczone z warstwa persystencji,
 // ze nie ma sensu probowac ich rozdzielac w tym miejscu.
-template <
-    class PersistenceManager,
-    class ConcurrencyControl = int
-    >
-class PageManager: private PersistenceManager
+template <class PersistenceManager>
+class PageManager: public PersistenceManager
 {
 public:
     PageManager();
@@ -112,15 +109,15 @@ private:
 };
 
 
-template <class PersistenceManager, class ConcurrencyControl>
-PageManager<PersistenceManager, ConcurrencyControl>::PageManager()
+template <class PersistenceManager>
+PageManager<PersistenceManager>::PageManager()
 {
 }
 
 
 // Wypelnia naglowek pliku bazy danych (ilosc stron i czas)
-template <class PersistenceManager, class ConcurrencyControl>
-void PageManager<PersistenceManager, ConcurrencyControl>::createHeader_()
+template <class PersistenceManager>
+void PageManager<PersistenceManager>::createHeader_()
 {
     PageBuffer page(0, PageType::HEADER);
 
@@ -132,9 +129,9 @@ void PageManager<PersistenceManager, ConcurrencyControl>::createHeader_()
 
 
 // Tworzy nowa strone UV, nastepna w stosunku do podanej.
-template <class PersistenceManager, class ConcurrencyControl>
-page_number PageManager<PersistenceManager, 
-    ConcurrencyControl>::createUVPage_(page_number previous_uv)
+template <class PersistenceManager>
+page_number PageManager<PersistenceManager>::createUVPage_(
+    page_number previous_uv)
 {
     // Obliczamy pozycje nowej strony UV - pierwsza jest szczegolnym przypadkiem
     page_number new_page;
@@ -168,8 +165,8 @@ page_number PageManager<PersistenceManager,
 }
 
 
-template <class PersistenceManager, class ConcurrencyControl>
-void PageManager<PersistenceManager, ConcurrencyControl>::createFile(
+template <class PersistenceManager>
+void PageManager<PersistenceManager>::createFile(
     const string& path)
 {
     // Tworzymy nowy plik dostepny dla uzytkownika
@@ -191,16 +188,16 @@ void PageManager<PersistenceManager, ConcurrencyControl>::createFile(
 }
 
 
-template <class PersistenceManager, class ConcurrencyControl>
-void PageManager<PersistenceManager, ConcurrencyControl>::openFile(
+template <class PersistenceManager>
+void PageManager<PersistenceManager>::openFile(
     const string& path)
 {
     this->open(path);
 }
 
 
-template <class PersistenceManager, class ConcurrencyControl>
-void PageManager<PersistenceManager, ConcurrencyControl>::closeFile()
+template <class PersistenceManager>
+void PageManager<PersistenceManager>::closeFile()
 {
     this->close();
 }
@@ -209,8 +206,8 @@ void PageManager<PersistenceManager, ConcurrencyControl>::closeFile()
 // Zwraca numer strony UV zawierajacej informacje o uzytkowaniu strony o
 // podanym numerze. Zwraca UV w dwoch przypadkach: gdy podana zostaje strona
 // UV, lub naglowek pliku.
-template <class PersistenceManager, class ConcurrencyControl>
-page_number PageManager<PersistenceManager, ConcurrencyControl>::findUV_(
+template <class PersistenceManager>
+page_number PageManager<PersistenceManager>::findUV_(
     page_number number)
 {
     page_number diff = (number - 1) % (PAGES_PER_UV + 1);
@@ -226,9 +223,9 @@ page_number PageManager<PersistenceManager, ConcurrencyControl>::findUV_(
 // Wczytuje do bufora strone UV zawierajaca informacje o stronie podanej jako 
 // pierwszy argument. Zwraca numer strony UV, lub NULL_PAGE w przypadku,
 // gdy strona nie posiada odpowiadajacej strony UV.
-template <class PersistenceManager, class ConcurrencyControl>
-page_number PageManager<PersistenceManager, 
-    ConcurrencyControl>::readUVOfPage_(page_number number, PageBuffer* page)
+template <class PersistenceManager>
+page_number PageManager<PersistenceManager>::readUVOfPage_(
+    page_number number, PageBuffer* page)
 {
     page_number uv = findUV_(number);
     if (uv != NULL_PAGE)
@@ -241,8 +238,8 @@ page_number PageManager<PersistenceManager,
 
 // Zwraca ilosc stron. Powinna byc wywolywana wylacznie gdy mamy locka
 // na naglowek bazy
-template <class PersistenceManager, class ConcurrencyControl>
-size32 PageManager<PersistenceManager, ConcurrencyControl>::pageCount_()
+template <class PersistenceManager>
+size32 PageManager<PersistenceManager>::pageCount_()
 {
     PageBuffer page;
     readPage(HEADER_PAGE_NUMBER, &page);
@@ -253,8 +250,8 @@ size32 PageManager<PersistenceManager, ConcurrencyControl>::pageCount_()
 
 // Zapisuje w strukturach wewnetrznych (strona UV) informacje, ze podana strona
 // jest uzywana. Powinna miec writelocka na strone modyfikowana.
-template <class PersistenceManager, class ConcurrencyControl>
-bool PageManager<PersistenceManager, ConcurrencyControl>::markAsUsed_(
+template <class PersistenceManager>
+bool PageManager<PersistenceManager>::markAsUsed_(
     page_number number)
 {
     // Wczytujemy odpowiednia strone UV
@@ -274,8 +271,8 @@ bool PageManager<PersistenceManager, ConcurrencyControl>::markAsUsed_(
 
 // Zapisuje w strukturach wewnetrznych informacje, ze podana strona jest wolna.
 // Implementacja analogiczna do markAsUsed().
-template <class PersistenceManager, class ConcurrencyControl>
-bool PageManager<PersistenceManager, ConcurrencyControl>::markAsFree_(
+template <class PersistenceManager>
+bool PageManager<PersistenceManager>::markAsFree_(
     page_number number)
 {
     PageBuffer page;
@@ -294,8 +291,8 @@ bool PageManager<PersistenceManager, ConcurrencyControl>::markAsFree_(
 // W sekcji danych strony przechowywanej w podanym buforze szuka pierwszego
 // zerowego bitu (nieuzywany blok). Zwraca jego pozycje, badz -1 gdy takowego 
 // nie ma.
-template <class PersistenceManager, class ConcurrencyControl>
-int PageManager<PersistenceManager, ConcurrencyControl>::scanForFree_(
+template <class PersistenceManager>
+int PageManager<PersistenceManager>::scanForFree_(
     const PageBuffer* uv)
 {
     // Po bajtach... mozna by optymalniej, ale... oj tam
@@ -313,8 +310,8 @@ int PageManager<PersistenceManager, ConcurrencyControl>::scanForFree_(
 
 
 // Zwieksza plik o page_count stron ogolnego uzytku (+ strony UV).
-template <class PersistenceManager, class ConcurrencyControl>
-void PageManager<PersistenceManager, ConcurrencyControl>::growFile_(
+template <class PersistenceManager>
+void PageManager<PersistenceManager>::growFile_(
     size32 page_count)
 {
     // Wczytujemy z naglowka bazy danych informacje o ilosci wszystkich stron.
@@ -352,8 +349,8 @@ void PageManager<PersistenceManager, ConcurrencyControl>::growFile_(
 
 
 // Znajduje wolna strone. Jesli jej nie ma, zwieksza plik. Zwraca jej numer.
-template <class PersistenceManager, class ConcurrencyControl>
-page_number PageManager<PersistenceManager, ConcurrencyControl>::findFree_()
+template <class PersistenceManager>
+page_number PageManager<PersistenceManager>::findFree_()
 {
     int count = pageCount_();
     PageBuffer page;
@@ -405,8 +402,8 @@ page_number PageManager<PersistenceManager, ConcurrencyControl>::findFree_()
 }
 
 
-template <class PersistenceManager, class ConcurrencyControl>
-page_number PageManager<PersistenceManager, ConcurrencyControl>::allocPage()
+template <class PersistenceManager>
+page_number PageManager<PersistenceManager>::allocPage()
 {
     // Exclusive lock na naglowku - nie chcemy dwoch watkow/procesow na raz
     // powiekszajacych pliku. Szukac to by jeszcze mogly, ale chyba nie ma
@@ -423,8 +420,8 @@ page_number PageManager<PersistenceManager, ConcurrencyControl>::allocPage()
 }
 
 
-template <class PersistenceManager, class ConcurrencyControl>
-bool PageManager<PersistenceManager, ConcurrencyControl>::deletePage(
+template <class PersistenceManager>
+bool PageManager<PersistenceManager>::deletePage(
     page_number number)
 { 
     WriteLock lock = writeLock(number);
@@ -432,17 +429,17 @@ bool PageManager<PersistenceManager, ConcurrencyControl>::deletePage(
 }
 
 
-template <class PersistenceManager, class ConcurrencyControl>
-void PageManager<PersistenceManager, ConcurrencyControl>::readPage(
+template <class PersistenceManager>
+void PageManager<PersistenceManager>::readPage(
     page_number number, PageBuffer* page)
 {
     this->read(number, page);
 }
 
 
-template <class PersistenceManager, class ConcurrencyControl>
+template <class PersistenceManager>
 std::unique_ptr<PageBuffer> 
-PageManager<PersistenceManager, ConcurrencyControl>::readPage(
+PageManager<PersistenceManager>::readPage(
     page_number number)
 {
     std::unique_ptr<PageBuffer> page(new PageBuffer);
@@ -451,8 +448,8 @@ PageManager<PersistenceManager, ConcurrencyControl>::readPage(
 }
 
 
-template <class PersistenceManager, class ConcurrencyControl>
-void PageManager<PersistenceManager, ConcurrencyControl>::writePage(
+template <class PersistenceManager>
+void PageManager<PersistenceManager>::writePage(
     page_number number, const PageBuffer* page)
 {
     this->write(number, page);

@@ -1,4 +1,4 @@
-SUBDIRS = error_msg util paging row io indexing concurrency database inspect
+SUBDIRS = error_msg util paging row io indexing concurrency database inspect networking
 
 AM_CPPFLAGS = -I include
 
@@ -11,6 +11,7 @@ libpaganini_la_LIBADD = error_msg/liberrormsg.la \
                         io/libio.la \
                         indexing/libindexing.la \
                         concurrency/libconcurrency.la \
+                        networking/libnetworking.la \
                         inspect/libinspect.la
 
 libpaganini_la_includedir = ${includedir}/paganini
@@ -21,7 +22,11 @@ noinst_PROGRAMS = test insp dbshell \
                   threads \
                   locks \
                   thread_locks \
-                  reader_writer 
+                  reader_writer \
+                  net_cl \
+                  net_sv \
+                  dbsv \
+                  dbcl 
                   
 test_SOURCES = test.cpp
 test_LDADD = libpaganini.la
@@ -49,3 +54,18 @@ locks_LDADD = libpaganini.la
 
 thread_locks_SOURCES = tests/LockingThreadTest.cpp
 thread_locks_LDADD = libpaganini.la
+
+net_cl_SOURCES = tests/NetTestClient.cpp
+net_cl_LDADD = libpaganini.la
+
+net_sv_SOURCES = tests/NetTestServer.cpp
+net_sv_LDADD = libpaganini.la
+
+
+dbsv_SOURCES = server/server.cpp
+dbsv_LDADD = libpaganini.la
+
+dbcl_SOURCES = client/client.cpp
+dbcl_LDADD = libpaganini.la
+
+

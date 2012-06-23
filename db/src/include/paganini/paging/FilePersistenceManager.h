@@ -15,13 +15,13 @@
 #include <paganini/paging/types.h>
 #include <paganini/Error.h>
 #include <paganini/paging/PageBuffer.h>
-#include <paganini/paging/FilePersistenceManager.h>
 #include <paganini/util/format.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
 #include <string>
+#include <utility>
 using std::string;
 
 
@@ -33,7 +33,7 @@ template <class Locker>
 class FilePersistenceManager
 {
 public:
-    FilePersistenceManager(const Locker& locker = Locker());
+    FilePersistenceManager(Locker locker = Locker());
     
     ~FilePersistenceManager();
     
@@ -54,6 +54,9 @@ public:
     
     // Zapisuje dane strony
     void write(page_number number, const PageBuffer* page);
+    
+    // Zapewnia, ze dane sa fizycznie zapisane na nosniku
+    void flush();
     
     // Typy lockow
     typedef typename Locker::ReadLock ReadLock;
@@ -76,8 +79,8 @@ private:
 
 
 template <class Locker>
-FilePersistenceManager<Locker>::FilePersistenceManager(const Locker& locker):
-    locker_(locker)
+FilePersistenceManager<Locker>::FilePersistenceManager(Locker locker):
+    locker_(std::move(locker))
 {
     fd_ = EMPTY_FD;
 }
@@ -150,6 +153,16 @@ void FilePersistenceManager<Locker>::write(page_number number,
     {      
         throw Exception(util::format("Trying to write page nr {}", number), 
             Error::WRITE);
+    }
+}
+
+
+template <class Locker>
+void FilePersistenceManager<Locker>::flush()
+{
+    if (::fsync(fd_) < PAGE_SIZE)
+    {      
+        throw Exception("Trying to flush file", Error::WRITE);
     }
 }
 

@@ -40,7 +40,8 @@ struct Column
     column_flags flags;
     
     // Brak numeru kolumny - wstrzykiwany przez RowFormat przy dodawaniu
-    Column(types::FieldType type, string name, column_flags flags = 0);
+    Column(types::FieldType type, string name, column_flags flags = 0, 
+        column_number col = NULL_COLUMN);
     
     // Konstruktor przenoszacy, unika kopiowania stringa
     Column(Column&& other);
@@ -72,8 +73,9 @@ public:
     // Konstruktor domyslny, tworzy pusty format wiersza
     RowFormat();
 
-    // Inicjalizuje format wiersza z wektora opisow kolumn
-    RowFormat(const std::vector<Column>& cols);
+    // Inicjalizuje format wiersza z opisow kolumn
+    template <typename _Iter>
+    RowFormat(_Iter begin, _Iter end);
     
     // To samo z listy inicjaliztorow
     RowFormat(std::initializer_list<Column> cols);
@@ -130,6 +132,15 @@ private:
     std::vector<int> _variable;
     std::unordered_map<string, int> _names;
 };
+
+
+template <typename _Iter>
+RowFormat::RowFormat(_Iter begin, _Iter end)
+{
+    while (begin != end)
+        addColumn(*begin ++);
+}
+
 
 // Wypisywanie, potrzebne bylo przy debugowaniu
 inline std::ostream& operator << (std::ostream& os, const RowFormat& format)

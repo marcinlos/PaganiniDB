@@ -16,8 +16,6 @@
 #include <paganini/paging/FilePersistenceManager.h>
 #include <paganini/paging/DummyLocker.h>
 #include <paganini/concurrency/FilePageLocker.h>
-#include <paganini/concurrency/ThreadPageLocker.h>
-#include <paganini/concurrency/pthread/Thread.h>
 #include <paganini/indexing/RowIndexer.h>
 #include <paganini/indexing/IndexReader.h>
 #include <paganini/indexing/IndexWriter.h>
@@ -43,7 +41,7 @@ namespace paganini
 namespace shell
 {
 
-typedef PageManager<FilePersistenceManager<concurrency::/*FilePageLocker*/ThreadPageLocker<concurrency::pthread::Thread>>> FilePageManager;
+typedef PageManager<FilePersistenceManager<concurrency::FilePageLocker>> FilePageManager;
 
 typedef DataPage<Index, types::FieldType, IndexReader, IndexWriter> 
     IndexDataPage;
@@ -102,10 +100,8 @@ public:
             {{types::ContentType::Char, 14}, "Name"},
             {types::ContentType::VarChar, "Surname"},
             {types::ContentType::VarChar, "Description"}
-            /*{ContentType::VarChar, "name"},
-            {ContentType::PageNumber, "*/
         });
-        tables_.insert(std::make_pair(/*"Tables"*/"Example", 
+        tables_.insert(std::make_pair("Example", 
             new TableTree(pageManager_, read ? 2 : TableTree::ALLOC_NEW, 
                 RowIndexer(format, 2))));
     }
@@ -299,7 +295,7 @@ public:
         {
             types::FieldType type = (*format)[0].type;
             std::shared_ptr<types::Data> data = readValue(*s, type);
-            table.findAll(Index(type, data), std::back_inserter(rows));
+            table.findRange(Index(type, data), std::back_inserter(rows));
         }
         else 
             table.fetchAll(std::back_inserter(rows)); 

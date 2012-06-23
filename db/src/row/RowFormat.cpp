@@ -8,8 +8,9 @@ namespace paganini
 {
 
 
-Column::Column(types::FieldType type, string name, column_flags flags):
-    name(name), col(NULL_COLUMN), type(type), flags(flags)
+Column::Column(types::FieldType type, string name, column_flags flags,
+    column_number col):
+    name(name), col(col), type(type), flags(flags)
 {
 }
 
@@ -31,13 +32,6 @@ Column::Column(const Column& other): name(other.name), col(other.col),
 
 RowFormat::RowFormat()
 {
-}
-
-
-RowFormat::RowFormat(const std::vector<Column>& cols)
-{
-    for (const Column& c: cols)
-        addColumn(c);
 }
 
 

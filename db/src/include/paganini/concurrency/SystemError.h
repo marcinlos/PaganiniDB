@@ -28,7 +28,7 @@ public:
         return error_code_;
     }
     
-private:
+protected:
     int error_code_;
 };
 
