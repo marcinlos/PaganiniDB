@@ -5,6 +5,7 @@
 
 #include <paganini/paging/DatabaseHeader.h>
 #include <paganini/paging/PageHeader.h>
+#include <paganini/paging/PageBuffer.h>
 #include <paganini/paging/configuration.h>
 #include <paganini/paging/Page.h>
 #include <paganini/paging/DataPage.h>
@@ -31,6 +32,8 @@ public:
     string operator ()(const DatabaseHeader& header) const;
     
     string operator ()(const PageBuffer& buffer, int bytes = -1) const;
+    
+    string uv(const PageBuffer& buffer) const;
 
 };
 

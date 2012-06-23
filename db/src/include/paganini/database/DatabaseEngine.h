@@ -1,7 +1,7 @@
 /*
 */
 #ifndef __PAGANINI_DATABASE_DATABASE_ENGINE_H__
-#define __PAGANINI_DATABASE_DATABASE__ENGINE_H__
+#define __PAGANINI_DATABASE_DATABASE_ENGINE_H__
 
 #include <paganini/paging/types.h>
 #include <paganini/paging/PageManager.h>
@@ -46,12 +46,20 @@ public:
     //~DatabaseEngine();
     
     void createTable(const string& name, FormatPtr format);
-
-private:
-    // Konfiguracja typow
-    typedef concurrency::ThreadPageLocker<concurrency::pthread::Thread> ThreadPageLocker;
     
-    typedef PageManager<FilePersistenceManager<ThreadPageLocker>> Pager;
+    template <typename _Predicate, typename _OutIter>
+    void select(const string& table_name, _Predicate selector, _OutIter out);
+    
+    void insert(const string& table_name, Row row);
+    
+    FormatPtr tableFormat(const string& table_name);
+    
+    template <typename _OutIter>
+    void getTables(_OutIter out);
+    
+    //typedef concurrency::ThreadPageLocker<concurrency::pthread::Thread> PageLocker;
+    typedef concurrency::FilePageLocker PageLocker;
+    typedef PageManager<FilePersistenceManager<PageLocker>> Pager;
     
     typedef DataPage<Index, types::FieldType, IndexReader, IndexWriter> 
         IndexDataPage;
@@ -61,7 +69,13 @@ private:
 
     typedef BTree<Pager, RowIndexer, IndexDataPage, RowDataPage> 
         TableTree;
-    typedef std::shared_ptr<TableTree> TablePtr; 
+    typedef std::shared_ptr<TableTree> TablePtr;
+    
+    Pager& pageManager();
+
+private:
+    // Konfiguracja typow
+ 
     typedef concurrency::pthread::Mutex Mutex;
 
 
@@ -108,8 +122,17 @@ private:
     // Synchronizacje nalezy zapewnic we wlasnym zakresie.
     int max_index_(const string& name);
     
+    // Usuwa wszystkie definicje tabel poza systemowymi
+    void clear_table_cache_();
+    
     // Wczytuje od nowa wszystkie definicje tabel (poza systemowymi)
     void update_table_defs_();
+    
+    // Zwraca true jesli table_name jest nazwa jednej z tabeli systemowych
+    bool is_system_table_(const string& table_name) const;
+    
+    // Debugowanie - wypisuje wszystkie tabele z tables_
+    void print_tables_();
     
     
     Pager page_manager_;
@@ -155,6 +178,38 @@ DatabaseEngine::DatabaseEngine(const string& path, bool create)
         add_table_to_sysobjects_("syscolumns", syscolumns_fmt_, 
             SYSOBJECTS_ROOT + 1, 1);
     }
+    update_table_defs_();
+    
+    //print_tables_();
+}
+
+
+
+template <typename _Predicate, typename _OutIter>
+void DatabaseEngine::select(const string& table_name, _Predicate selector, 
+    _OutIter out)
+{
+    auto lock = page_manager_.readLock(SYSOBJECTS_ROOT);
+    TablePtr table = get_table_(table_name);
+    if (table == nullptr)
+    {
+        throw DatabaseError(util::format("Table '{}' does not exist "
+            "(trying to perform SELECT)", table_name));
+    }
+    table->findAll(selector, out);
+}
+
+
+void DatabaseEngine::insert(const string& table_name, Row row)
+{
+    auto lock = page_manager_.readLock(SYSOBJECTS_ROOT);
+    TablePtr table = get_table_(table_name);
+    if (table == nullptr)
+    {
+        throw DatabaseError(util::format("Table '{}' does not exist "
+            "(trying to perform INSERT)", table_name));
+    }
+    table->insert(row);
 }
 
 
@@ -166,6 +221,7 @@ DatabaseEngine::TablePtr DatabaseEngine::get_table_(const string& table_name)
     auto i = tables_.find(table_name);
     if (i == tables_.end())
     {
+        /*auto sysobjectsLock = page_manager_.readLock(SYSOBJECTS_ROOT);
         Row def = sysobjects_->find([&table_name](const Row& row)
         {
             return table_name == data_cast<ContentType::VarChar>(*row["name"]);
@@ -175,7 +231,13 @@ DatabaseEngine::TablePtr DatabaseEngine::get_table_(const string& table_name)
             FormatPtr format = parse_table_(def);
             page_number root = data_cast<ContentType::Int>(*def["root_page"]);
             return insert_to_table_map_(table_name, format, root);
-        }
+        }*/
+        // Po prostu zupdatujmy wszystkie informacje o tabelach
+        update_table_defs_();
+        i = tables_.find(table_name);
+        
+        if (i != tables_.end())
+            return i->second;
         else
             return nullptr;
     }
@@ -253,9 +315,18 @@ Column DatabaseEngine::parse_column_(const Row& row)
 
 void DatabaseEngine::createTable(const string& name, FormatPtr format)
 {
-    TablePtr table = insert_to_table_map_(name, format);
-    object_id id = max_index_("sysobjects") + 1;
-    add_table_to_sysobjects_(name, format, table->root(), id);
+    auto lock = page_manager_.writeLock(SYSOBJECTS_ROOT);
+    if (get_table_(name) == nullptr)
+    {
+        TablePtr table = insert_to_table_map_(name, format);
+        object_id id = max_index_("sysobjects") + 1;
+        add_table_to_sysobjects_(name, format, table->root(), id);
+    }
+    else
+    {
+        throw DatabaseError(util::format("Table '{}' already exists "
+            "(trying to CREATE TABLE)", name));
+    }
 }
 
 
@@ -315,9 +386,94 @@ int DatabaseEngine::max_index_(const string& name)
 }
 
 
+void DatabaseEngine::clear_table_cache_()
+{
+    for (auto i = tables_.begin(); i != tables_.end(); )
+    {
+        if (! is_system_table_(i->first))
+            tables_.erase(i ++);
+        else 
+            ++ i;
+    }
+}
+
+
 void DatabaseEngine::update_table_defs_()
 {
+    using namespace types;
     
+    std::vector<Row> rows;
+    sysobjects_->findAll([](const Row& row)
+    {   
+        string name = data_cast<ContentType::VarChar>(*row["name"]);
+        string type = data_cast<ContentType::Char>(*row["type"]);
+        std::cout << name << "(" << type << ")" << std::endl;
+        return type == "T";
+    },
+    std::back_inserter(rows)); 
+    
+    auto mutexLock = concurrency::make_lock(mutex_);
+    clear_table_cache_();   
+    for (const Row& row: rows)
+    {
+        using namespace types;
+        string name = data_cast<ContentType::VarChar>(*row["name"]);
+        if (! is_system_table_(name))
+        {
+            FormatPtr format(parse_table_(row));
+            page_number page = data_cast<ContentType::Int>(*row["root_page"]);
+            insert_to_table_map_(name, format, page);
+        }
+    }
+}
+
+
+bool DatabaseEngine::is_system_table_(const string& table_name) const
+{
+    return table_name == "sysobjects" || table_name == "syscolumns";
+}
+
+
+void DatabaseEngine::print_tables_()
+{
+    for (auto pair: tables_)
+    {
+        string name = pair.first;
+        TableTree& table = *pair.second;
+        
+        std::cout << "Table name: " << name << std::endl;
+        std::cout << *table.indexer().rowFormat() << std::endl;
+    }
+}
+
+
+DatabaseEngine::FormatPtr DatabaseEngine::tableFormat(const string& table_name)
+{
+    TablePtr table = get_table_(table_name);
+    if (table != nullptr)
+        return table->indexer().rowFormat();
+    else
+    {
+        throw DatabaseError(util::format("Table '{}' does not exist "
+            "(table format requested)", table_name));
+    }
+}
+
+
+template <typename _OutIter>
+void DatabaseEngine::getTables(_OutIter out)
+{
+    auto lock = concurrency::make_lock(mutex_);
+    for (auto pair: tables_)
+    {
+        *out ++ = pair;
+    }
+}
+
+
+DatabaseEngine::Pager& DatabaseEngine::pageManager()
+{
+    return page_manager_;
 }
 
 

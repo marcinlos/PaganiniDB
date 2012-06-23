@@ -297,10 +297,11 @@ public:
     
     FieldType type() const { return { ContentType::Char, max_length }; }
     
-    string value() const { return string(val.begin(), val.end()); }
+    string value() const { return string(&val[0]/*val.begin(), val.end()*/); }
     
     string toString() const { return value(); }
 };
+
 
 // Typ tekstowy bez ograniczenia dlugosci
 class VarChar: public Data

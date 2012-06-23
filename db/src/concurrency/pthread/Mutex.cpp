@@ -13,9 +13,15 @@ namespace pthread
 
 Mutex::Mutex()
 {
+    pthread_mutexattr_t attrs;
+    pthread_mutexattr_init(&attrs);
+    pthread_mutexattr_settype(&attrs, PTHREAD_MUTEX_RECURSIVE);
+    
     int code;
-    if ((code = pthread_mutex_init(&mutex_, nullptr)) < 0)
+    if ((code = pthread_mutex_init(&mutex_, &attrs)) < 0)
         throw SystemError("Cannot create the mutex", code);
+        
+    pthread_mutexattr_destroy(&attrs);
 }
 
 

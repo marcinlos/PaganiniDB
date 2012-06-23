@@ -83,6 +83,25 @@ string InfoFormatter::operator ()(const PageBuffer& buffer, int bytes) const
 }
 
 
+string InfoFormatter::uv(const PageBuffer& buffer) const
+{
+    std::ostringstream ss;
+    
+    for (unsigned int i = 0; i < PAGES_PER_UV / 8; ++ i)
+    {
+        if (i % 8 == 0)
+            ss << std::endl;
+        for (int mask = 1; mask < (1 << 8); mask <<= 1)
+        {
+            ss.put((buffer.data[i] & mask) ? '*' : '.');
+        }
+        ss.put(' ');
+    }
+    ss << std::endl;
+    return ss.str();
+}
+
+
 } // inspect
 } // paganini
 

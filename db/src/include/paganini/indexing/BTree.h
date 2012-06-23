@@ -113,6 +113,7 @@ public:
         // Dla uproszczenia korzystamy z rekursywnosci
         auto secondLock = pager_.writeLock(end_);
         pager_.writePage(end_, page.buffer());
+        sleep(10);
         return true;
     }
     
@@ -299,7 +300,7 @@ public:
     RowType max()
     {
         // Nie chcemy by ktokolwiek zmienial zawartosc 
-        auto writeLock = pager_.writeLock(root_);
+        auto readLock = pager_.readLock(root_);
         _DataPage page;
         page_number page_num = root_;
         RowType current_max;

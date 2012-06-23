@@ -46,7 +46,7 @@ namespace lexer
         {
             notEnd();
             if (begin->content != content)
-                throw std::runtime_error(util::format("'{} got, {} expected",
+                throw std::runtime_error(util::format("'{}' got, {} expected",
                     begin->content, content));
         }
         

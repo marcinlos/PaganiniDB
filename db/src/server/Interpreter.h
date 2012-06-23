@@ -16,6 +16,7 @@
 #include <paganini/paging/FilePersistenceManager.h>
 #include <paganini/paging/DummyLocker.h>
 #include <paganini/concurrency/FilePageLocker.h>
+#include <paganini/concurrency/ThreadPageLocker.h>
 #include <paganini/indexing/RowIndexer.h>
 #include <paganini/indexing/IndexReader.h>
 #include <paganini/indexing/IndexWriter.h>
@@ -37,21 +38,8 @@ using std::string;
 
 namespace paganini
 {
-
 namespace shell
 {
-
-typedef PageManager<FilePersistenceManager<concurrency::FilePageLocker>> FilePageManager;
-
-typedef DataPage<Index, types::FieldType, IndexReader, IndexWriter> 
-    IndexDataPage;
-
-typedef DataPage<Row, std::shared_ptr<const RowFormat>, RowReader, RowWriter> 
-    RowDataPage;
-
-typedef BTree<FilePageManager, RowIndexer, IndexDataPage, RowDataPage> 
-    TableTree;
-
 
 using namespace util::lexer;
 
@@ -82,41 +70,23 @@ private:
     
     typedef std::shared_ptr<const RowFormat> FormatInfo;
     
-    FilePageManager pageManager_;
-    std::unordered_map<string, std::shared_ptr<TableTree>> tables_;
+    engine::DatabaseEngine& engine_;
     
 public:
-    Interpreter(bool read)
+    Interpreter(engine::DatabaseEngine& engine): engine_(engine)
     {
-        using types::ContentType;
-        if (! read)
-            pageManager_.createFile("db");
-        pageManager_.openFile("db");
         lexer.registerOperators(",.+-=*^&%");
-        
-        std::shared_ptr<RowFormat> format(new RowFormat { 
-            {types::ContentType::Int, "Count"}, 
-            {types::ContentType::Float, "Variance"},
-            {{types::ContentType::Char, 14}, "Name"},
-            {types::ContentType::VarChar, "Surname"},
-            {types::ContentType::VarChar, "Description"}
-        });
-        tables_.insert(std::make_pair("Example", 
-            new TableTree(pageManager_, read ? 2 : TableTree::ALLOC_NEW, 
-                RowIndexer(format, 2))));
     }
     
     
     void createTable(const string& name, FormatInfo format)
     {
-        tables_.insert(std::make_pair(name, new TableTree(pageManager_,
-            TableTree::ALLOC_NEW, RowIndexer(format, 0))));
+        engine_.createTable(name, format);
     }
     
     
     ~Interpreter()
     {
-        pageManager_.closeFile();
     }
     
     typedef TokenSequence<TokenIterator> Sequence;
@@ -139,6 +109,8 @@ public:
                 parseShow(++ s);
             else if (*s == "raw_page")
                 showRawPage(++ s);
+            else if (*s == "uv")
+                showUvPage(++ s);
             else if (*s == "header")
                 showPageHeader(++ s);
             else if (*s == "dbheader")
@@ -173,11 +145,13 @@ public:
     void showTables()
     {
         std::cout << std::endl;
-        for (const auto& table: tables_)
+        std::vector<std::pair<string, engine::DatabaseEngine::TablePtr>> tables;
+        engine_.getTables(std::back_inserter(tables));
+        for (auto pair: tables)
         {
-            std::cout << "Name: " << table.first << std::endl;
+            std::cout << "Name: " << pair.first << std::endl;
             std::cout << "Columns: " << std::endl;
-            std::cout << *(table.second->indexer().rowFormat()) << std::endl;
+            std::cout << *(pair.second->indexer().rowFormat()) << std::endl;
         }
     }
     
@@ -186,17 +160,32 @@ public:
         s.mustBe(T_INTEGER);
         page_number n = lexical_cast<page_number>(*s);
         PageBuffer page;
-        pageManager_.readPage(n, &page);
+        engine_.pageManager().readPage(n, &page);
         std::cout << std::endl << inspect::format_bytes(page.buffer, 
             PAGE_SIZE) << std::endl;
-    }    
+    }   
+    
+    void showUvPage(Sequence& s)
+    {
+        s.mustBe(T_INTEGER);
+        page_number n = lexical_cast<page_number>(*s);
+        if (! isUV(n))
+        {
+            throw std::logic_error(util::format("Page number '{}' is not UV",
+                n));
+        }
+        PageBuffer page;
+        engine_.pageManager().readPage(n, &page);
+        inspect::InfoFormatter fmt;
+        std::cout << std::endl << fmt.uv(page) << std::endl;
+    }  
     
     void showPageHeader(Sequence& s)
     {
         s.mustBe(T_INTEGER);
         page_number n = lexical_cast<page_number>(*s);
         PageBuffer page;
-        pageManager_.readPage(n, &page);
+        engine_.pageManager().readPage(n, &page);
         inspect::InfoFormatter fmt;
         std::cout << std::endl << fmt(page.header) << std::endl;
     }
@@ -204,7 +193,7 @@ public:
     void showDatabaseHeader()
     {
         PageBuffer page;
-        pageManager_.readPage(0, &page);
+        engine_.pageManager().readPage(0, &page);
         inspect::InfoFormatter fmt;
         std::cout << std::endl << fmt(*page.get<DatabaseHeader>()) << std::endl;
     }
@@ -213,17 +202,9 @@ public:
     {
         s.mustBe("into");
         s.nextMustBe(T_NAME);
-
-        auto iter = tables_.find(*s);
-        if (iter == tables_.end())
-        {
-            throw std::runtime_error(util::format("Table '{}' does not "
-                "exist", *s));
-        }
+        string table_name = *s;
+        FormatInfo format = engine_.tableFormat(table_name);
         s.nextMustBe("values");
-        TableTree& table = *iter->second;
-        std::shared_ptr<const RowFormat> format = table.indexer().rowFormat();
-        
         s.nextMustBe(T_LPAR);
         s.nextNotEnd();
         Row row(format);
@@ -246,8 +227,8 @@ public:
             s.nextNotEnd();
             ++ i;
         }
+        engine_.insert(table_name, row);
         std::cout << "Row: " << std::endl << row << std::endl;
-        table.insert(row);
     }
     
     std::unique_ptr<types::Data> readValue(const string& value, 
@@ -281,24 +262,22 @@ public:
         std::vector<string> cols = parseColumns(s);
         s.mustBe("from");
         s.nextMustBe(T_NAME);
-        auto iter = tables_.find(*s);
-        if (iter == tables_.end())
-        {
-            throw std::runtime_error(util::format("Table '{}' does not "
-                "exist", *s));
-        }
-        TableTree& table = *iter->second;
-        std::shared_ptr<const RowFormat> format = table.indexer().rowFormat();
+        string table_name = *s;
+        FormatInfo format = engine_.tableFormat(table_name);
         s.next();
         std::vector<Row> rows;
         if (! s.isEnd())
         {
             types::FieldType type = (*format)[0].type;
             std::shared_ptr<types::Data> data = readValue(*s, type);
-            table.findRange(Index(type, data), std::back_inserter(rows));
+            engine_.select(table_name, Index(type, data), 
+                std::back_inserter(rows));
         }
         else 
-            table.fetchAll(std::back_inserter(rows)); 
+        {
+            engine_.select(table_name, [](const Row& row) { return true; },
+                std::back_inserter(rows)); 
+        }
         printRows(rows.begin(), rows.end());
     }
     
@@ -321,12 +300,6 @@ public:
         s.mustBe("table");
         s.nextMustBe(T_NAME);
         string table = *s;
-        
-        if (tables_.find(*s) != tables_.end())
-        {
-            throw std::runtime_error(util::format("Table '{}' already "
-                "exists", *s));
-        }
         s.nextMustBe(T_LPAR);
         s.nextNotEnd();
         std::vector<Column> columns;
@@ -350,7 +323,7 @@ public:
             s.nextNotEnd();
             ++ i;
         }
-        createTable(table, format);
+        engine_.createTable(table, format);
     }
     
     types::FieldType parseFieldType(Sequence& s)
